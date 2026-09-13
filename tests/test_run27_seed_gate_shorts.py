@@ -191,6 +191,34 @@ def main():
                   f'{_s.get("pad_conflicts_seeded")} + '
                   f'{_s.get("pad_conflicts_inherited")}')
 
+    # ---- the stderr line names the channel that actually fired -----------
+    # Two failures reach exit 4 and they are not the same failure. The
+    # hole-only arm is the one that had no way to be seen from a fixture:
+    # `grade_pad_legality` counts holes without recording the pair, so a
+    # hole-only refusal cannot print pairs -- and the line used to say
+    # "pads ... see the pairs above" anyway, naming the wrong channel and
+    # pointing at output that is not there. `gate_reason` is pure, so the
+    # four arms are gradable without a board that can produce each one.
+    sys.path.insert(0, os.path.join(ROOT, 'py_placer'))
+    import place_seed as _ps
+    _g = _ps.gate_reason
+    check('nothing fired -> no refusal line at all', _g([], [], [], 0) is None,
+          repr(_g([], [], [], 0)))
+    _miss = _g(['U1'], [], [], 0) or ''
+    check('a seed that misses its intent says so',
+          'does NOT satisfy its intent' in _miss, _miss)
+    _pad = _g([], [], [('A', 'B', 0.1)], 0) or ''
+    check('a pad-only refusal names pads and points at the pairs',
+          'satisfies its intent' in _pad and 'pads closer' in _pad
+          and 'named above' in _pad and 'hole' not in _pad, _pad)
+    _hole = _g([], [], [], 3) or ''
+    check('a HOLE-only refusal names holes, not pads, and promises no pairs',
+          'hole conflict' in _hole and '3' in _hole
+          and 'pads closer' not in _hole and 'pairs' not in _hole, _hole)
+    _both = _g([], [], [('A', 'B', 0.1)], 2) or ''
+    check('both channels are named when both fired',
+          'pads closer' in _both and 'hole conflict' in _both, _both)
+
     print(f"\n{'FAILED: ' + ', '.join(fails) if fails else 'ALL PASS'}")
     return 1 if fails else 0
 

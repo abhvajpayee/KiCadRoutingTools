@@ -80,6 +80,38 @@ def _print_grade(own, pinned):
             print(f"  GRADE ERROR (pinned) [{v.rule}] {v.message}")
 
 
+def gate_reason(unseated, own, my_pads, hole_delta):
+    """The one stderr line that says WHY this seed did not pass its gate.
+
+    Two failures reach exit 4 and they are not the same failure, so the line
+    names which: a seed that misses the document it was built from, and a
+    seed that satisfies that document and still leaves copper that cannot be
+    assembled. `None` when nothing fired -- the caller returns 0.
+
+    The second arm names ONLY the channel that actually fired. A hole
+    conflict has no pair to look at (`grade_pad_legality` counts holes
+    without recording the pair, which is exactly why it is judged on the
+    DELTA), so a hole-only refusal that said "pads ... see the pairs above"
+    named the wrong channel and pointed at output that is not printed in
+    that case.
+    """
+    if not (unseated or own or my_pads or hole_delta):
+        return None
+    tail = " It was still written, for inspection."
+    if unseated or own:
+        return ("place_seed: the seed does NOT satisfy its intent -- see the "
+                "errors above." + tail)
+    ch = []
+    if my_pads:
+        ch.append("pads closer than their clearance (the pairs are named "
+                  "above)")
+    if hole_delta:
+        ch.append(f"{hole_delta} hole conflict(s) the board did not come in "
+                  f"with")
+    return ("place_seed: the seed satisfies its intent but leaves "
+            + " and ".join(ch) + "." + tail)
+
+
 def main():
     import routing_defaults as defaults
     from placement.cli_gates import add_intent_arg
@@ -974,14 +1006,9 @@ Examples:
                         if after.get('hpwl') is not None else None),
                'output': args.output_file}
     print("JSON_SUMMARY: " + json.dumps(summary, sort_keys=True))
-    if result['unseated'] or own or _my_pads or _hole_delta:
-        print("place_seed: the seed does NOT satisfy its intent -- see the "
-              "errors above. It was still written, for inspection."
-              if (result['unseated'] or own) else
-              "place_seed: the seed satisfies its intent but leaves pads "
-              "closer than their clearance -- see the pairs above. It "
-              "was still written, for inspection.",
-              file=sys.stderr)
+    _reason = gate_reason(result['unseated'], own, _my_pads, _hole_delta)
+    if _reason is not None:
+        print(_reason, file=sys.stderr)
         return 4
     if pinned:
         print(f"place_seed: {len(pinned)} grade error(s) on locked part(s) set "
