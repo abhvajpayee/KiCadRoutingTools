@@ -80,6 +80,38 @@ def _print_grade(own, pinned):
             print(f"  GRADE ERROR (pinned) [{v.rule}] {v.message}")
 
 
+def gate_reason(unseated, own, my_pads, hole_delta):
+    """The one stderr line that says WHY this seed did not pass its gate.
+
+    Two failures reach exit 4 and they are not the same failure, so the line
+    names which: a seed that misses the document it was built from, and a
+    seed that satisfies that document and still leaves copper that cannot be
+    assembled. `None` when nothing fired -- the caller returns 0.
+
+    The second arm names ONLY the channel that actually fired. A hole
+    conflict has no pair to look at (`grade_pad_legality` counts holes
+    without recording the pair, which is exactly why it is judged on the
+    DELTA), so a hole-only refusal that said "pads ... see the pairs above"
+    named the wrong channel and pointed at output that is not printed in
+    that case.
+    """
+    if not (unseated or own or my_pads or hole_delta):
+        return None
+    tail = " It was still written, for inspection."
+    if unseated or own:
+        return ("place_seed: the seed does NOT satisfy its intent -- see the "
+                "errors above." + tail)
+    ch = []
+    if my_pads:
+        ch.append("pads closer than their clearance (the pairs are named "
+                  "above)")
+    if hole_delta:
+        ch.append(f"{hole_delta} hole conflict(s) the board did not come in "
+                  f"with")
+    return ("place_seed: the seed satisfies its intent but leaves "
+            + " and ".join(ch) + "." + tail)
+
+
 def main():
     import routing_defaults as defaults
     from placement.cli_gates import add_intent_arg
@@ -871,6 +903,68 @@ Examples:
         return UNPLACED_EXIT
     own, pinned = _split_pinned(graded, args.output_file, intent)
     _print_grade(own, pinned)
+    # THE GATE LOOKS AT THE COPPER IT JUST ARRANGED (run 27).
+    #
+    # The intent grade above answers "does this satisfy the document it was
+    # built from", and a pad conflict is not in that document: `legality_budget`
+    # carries `oob_count` (the emitter bakes that one) and, on an emitted
+    # intent, withholds `overlap_area`, while pad and hole conflicts are not a
+    # budgeted channel at all. So a seed could put one part's pin through
+    # another's pad, grade clean against its own intent, and be RANKED clean
+    # by compare_seeds -- and `check_assembly` would then call the board NOT
+    # BUILDABLE for the pad_intersection nobody upstream had looked for.
+    # Measured on esp_prog: ten seeds of ten, all passing, all unbuildable.
+    #
+    # Attribution, so the seed answers for its own work and not the board's
+    # (the same split `_split_pinned` makes for the intent grade): a PAD pair
+    # is the seed's when either member is a part it placed -- precise, by ref.
+    # A hole conflict cannot be attributed that way, because
+    # `grade_pad_legality` counts holes without recording the pair, so it is
+    # judged on the DELTA against the input board: a count that rose is the
+    # seed's, one that was already there is not.
+    from placement.legality import grade_pad_legality
+    _pads_in = grade_pad_legality(pcb, args.clearance,
+                                  pcb_file=args.input_file)
+    _pads_out = grade_pad_legality(parse_kicad_pcb(args.output_file),
+                                   args.clearance, pcb_file=args.output_file,
+                                   worst_n=0)
+    # THE PARTS IT MOVED, not `placements`. That list carries every part the
+    # seeder wrote, locked and out-of-scope ones included at the pose they
+    # came in with -- so reading it as "what the seed placed" charges the seed
+    # for a short between two parts it never touched. Measured on a fixture
+    # with two locked, already-overlapping parts: 2 seeded pairs reported,
+    # both of them the board's.
+    def _moved(p):
+        fp_in = pcb.footprints.get(p['reference'])
+        return fp_in is None or (
+            abs(p['new_x'] - fp_in.x) > 1e-6
+            or abs(p['new_y'] - fp_in.y) > 1e-6
+            or abs((p['new_rotation'] - fp_in.rotation) % 360.0) > 1e-6)
+    _seeded = {p['reference'] for p in result['placements'] if _moved(p)}
+    _my_pads = [w for w in (_pads_out.get('worst') or ())
+                if w[0] in _seeded or w[1] in _seeded]
+    # From the COUNT, not from `len(worst)`: `worst` is capped by `worst_n`
+    # (10 by default, 0 above meaning uncapped), and subtracting a capped list
+    # from itself would report 0 inherited on a board with 50 shorts. This way
+    # the two numbers always sum to `pad_conflicts` whatever the cap is, and a
+    # cap that ever came back would cost detail in the NAMES rather than
+    # silence in the totals.
+    _their_pads = max(0, (_pads_out.get('pad_conflicts') or 0) - len(_my_pads))
+    _hole_delta = max(0, (_pads_out.get('hole_conflicts') or 0)
+                      - (_pads_in.get('hole_conflicts') or 0))
+    if _my_pads:
+        print(f"  {len(_my_pads)} pad conflict(s) among the parts this seed "
+              f"placed: "
+              + '; '.join(f"{a} <-> {b} ({mm:.3f}mm)"
+                          for a, b, mm in _my_pads[:10])
+              + ("" if len(_my_pads) <= 10 else
+                 f" ... and {len(_my_pads) - 10} more"))
+    if _their_pads:
+        print(f"  {_their_pads} further pad conflict(s) between parts this seed "
+              f"did not place -- the board's own, reported not charged")
+    if _hole_delta:
+        print(f"  hole conflicts rose {_pads_in.get('hole_conflicts')} -> "
+              f"{_pads_out.get('hole_conflicts')} across this seed")
     after = ratsnest.get('after', {})
     summary = {'placed': len(result['placements']),
                'unseated': len(result['unseated']),
@@ -898,16 +992,23 @@ Examples:
                'locked': n_locked,
                'grade_errors': len(own),
                'grade_errors_pinned': len(pinned),
+               # run 27: the copper this seed arranged, graded. `_seeded`
+               # names the pairs; `_inherited` is the board's own and is
+               # reported rather than charged.
+               'pad_conflicts_seeded': len(_my_pads),
+               'pad_conflicts_seeded_pairs': [[a, b, mm]
+                                              for a, b, mm in _my_pads],
+               'pad_conflicts_inherited': _their_pads,
+               'hole_conflicts_added': _hole_delta,
                'grade_warnings': len(graded.warnings),
                'crossings': after.get('crossings'),
                'hpwl': (round(after['hpwl'], 3)
                         if after.get('hpwl') is not None else None),
                'output': args.output_file}
     print("JSON_SUMMARY: " + json.dumps(summary, sort_keys=True))
-    if result['unseated'] or own:
-        print("place_seed: the seed does NOT satisfy its intent -- see the "
-              "errors above. It was still written, for inspection.",
-              file=sys.stderr)
+    _reason = gate_reason(result['unseated'], own, _my_pads, _hole_delta)
+    if _reason is not None:
+        print(_reason, file=sys.stderr)
         return 4
     if pinned:
         print(f"place_seed: {len(pinned)} grade error(s) on locked part(s) set "
