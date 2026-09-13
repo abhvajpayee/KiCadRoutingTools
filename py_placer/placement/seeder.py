@@ -7,6 +7,20 @@ aided path: the intent file IS the constraint carrier (zones, edge bands,
 locks, decap rules), so a board whose repo declares one can get a legal,
 deterministic, seeded starting placement instead of a refusal.
 
+IT PLACES THE RESIDUE, NOT THE DECISIONS. Everything below is greedy
+first-fit: a zone is packed radially from its centre, anything unzoned lands
+on its connectivity centroid, and the first rotation that fits is kept. That
+is the right shape for the many small parts and it is not a chooser -- it has
+no representation for a pose that is a DECISION. An edge band says which edge
+and not where along it; nothing says which way a mating face points, so a
+connector is seated at the band's midpoint at whatever angle it came in with,
+which on a pile is a generator default. Measured on esp_prog (run 27): both
+free connectors came out at rotation 0, and one of them put the band midpoint
+through a fixed socket's ground tab on every one of ten seeds. Place and lock
+the parts whose pose is a decision first; seed what is left. The placement
+driver's P1 enforces that, and `--waive seed-connectors:<why>` is how a
+caller deliberately hands a connector to this module instead.
+
 What each intent construct becomes, in placement order:
 
   1. ``edge_connectors``   the declared edge, overhang centered in the band,
