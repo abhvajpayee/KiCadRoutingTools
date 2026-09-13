@@ -268,6 +268,53 @@ read it when the step below points at it:
 | `.claude/skills/plan-pcb-placement-and-routing/references/verifier-prompts.md` | you are dispatching a verification subagent |
 | `.claude/skills/plan-pcb-placement-and-routing/references/convergence.md` | you are running a fix loop and need its stop conditions |
 
+### Which tool, when
+
+Two kinds, and the difference is the whole safety story: an **actor** changes
+the board, an **instrument** only measures it. Reach for an instrument freely;
+reach for an actor only when you can say which of the rows below you are in.
+`python3 -X utf8 krt_registry.py --door placement` is the authority for which
+tool is which and for the complete list — this table is the DECISION, not the
+catalogue, and `tests/test_956_skill_tool_index.py` fails when an actor at
+that door appears in neither.
+
+**Actors — choose by what you HAVE, not by what the tool is called:**
+
+| you have | reach for | not |
+|---|---|---|
+| a pile, no placement at all | decide the fixed parts and the connectors yourself and LOCK them (`place_pose`), then `place_seed` from a zone plan, and rank several with `compare_seeds` | `place_optimize` — there is nothing to refine yet |
+| one part in the wrong place, and you know where it belongs | `place_pose` — set, rotate, face or lock; it grades the pose and refuses one that makes the board's pad legality worse | a whole-board search, which orders violators by its own priority and may never reach yours |
+| a rough, imported or generated placement, all legal | `place_optimize --max-displacement 3` | `place_reconstruct` |
+| a placement that is WRONG — copper-free DRC violations, or a mechanically-fixed part where mechanics forbid | `place_reconstruct` for structural damage, `place_seed --repair` for local violations | `place_optimize` — the quench is a local search and this is not a local problem |
+| a need for OPTIONS rather than one answer | `place_portfolio` explores around ONE seed; `compare_seeds` ranks ACROSS seeds. The portfolio cannot cross seeds, so rank first | |
+| a routing failure your classifier called congestion | `place_route_loop --target-nets <the nets the failure named> --accept-cmd <the comparator>` | router parameters — no setting adds a lane |
+| a fine-pitch escape that will not fit | `place_fanout_clearance` — the one placement step that lays copper, so it is the only one with a DRC floor to write back | |
+| a move you are about to pay for, or a lap to undo | `converge` — rank the poses first, step back after | |
+| silkscreen that collides after the parts moved | `beautify_labels` | |
+| any reason to copy a board | `copy_board` — never `cp`, which strands the sibling `.kicad_pro` DRC floor (#441) | |
+
+**Instruments — choose by the QUESTION you are asking:**
+
+| the question | the instrument |
+|---|---|
+| is this physically buildable? | `check_assembly` |
+| does it satisfy what was DECLARED? | `check_floorplan --intent` |
+| one number a loop can tell better from worse by | `board_score` |
+| which placement terms moved, and which way | `placement_score` |
+| what does it LOOK like (and the movie) | `render_placement`, `make_film` |
+| what is this board, before I place anything | `board_brief`, `board_context` |
+| can the board even hold its parts | `check_capacity` |
+| are the lanes open, is this pad reachable, where is it tight | `check_channels`, `check_reachability`, `check_pockets` |
+| is the pad geometry itself sane | `check_pads` |
+| did that change move parts as a BLOCK or break something | `check_rigid_consistency` |
+| what nets are on this board | `list_nets` |
+| how fragile are the planes under this arrangement | `plane_score` |
+| DRC on the COPPER-FREE board | `check_drc` |
+| the fanout cap repair, animated | `animate_fanout_clearance` |
+
+One stage at a time comes from the driver, not from this table:
+`.claude/skills/plan-pcb-placement/scripts/placement_driver.py`.
+
 ## Step 0: Placement gate — measure first, then decide
 
 Before planning any routing, MEASURE whether the board should be **placed** or
