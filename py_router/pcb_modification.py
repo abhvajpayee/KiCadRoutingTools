@@ -3806,6 +3806,14 @@ def prune_grazing_segments(results, pcb_data: PCBData, scope_net_ids=None,
     return len(removed_routed_ids) + len(original_to_remove), nets_pruned, original_to_remove
 
 
+# #958: smooth_octolinear_chains accepts an octolinear connector of EQUAL
+# length -- equal to floating-point roundoff, never min_gain as an allowance to
+# get longer -- when it emits strictly fewer legs; a leg at or under
+# _SMOOTH_DEGENERATE_LEG mm is neither emitted nor counted.
+_SMOOTH_TIE_TOL = 1e-9
+_SMOOTH_DEGENERATE_LEG = 1e-5
+
+
 def _octolinear_bends(A, B):
     """Candidate octolinear (45-degree) polylines from A to B: the direct segment
     (when A->B is already octolinear) and the two single-bend L-elbows (diagonal-
@@ -4118,7 +4126,13 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
         .kicad_dru layer rule replacing the base clearance on ruled layers
         (#498, which the older graze passes never honored) and a .kicad_dru
         TRACK rule raising the seg-vs-seg term on top of it (#735);
-      * is strictly shorter than the copper it replaces (min_gain);
+      * is shorter than the copper it replaces by at least min_gain, or
+        (#958, in a second greedy phase over the shortened chain, which
+        also takes the strictly shorter connectors the first phase's new
+        bends expose) equal in length to floating-point roundoff with
+        strictly fewer emitted legs -- a jog that is already a shortest
+        octolinear path loses its needless corner at the same length;
+        min_gain is never an allowance to get longer;
       * strands no same-net copper: mid-span via taps, pad touches, and
         T/X-touching sibling tracks hold their span un-collapsed unless the
         touch sits at a kept endpoint.
@@ -4518,58 +4532,194 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
                                 if d < r:
                                     touches.append((pt_on_chain[0], pt_on_chain[1], k, r))
 
-                        def span_free(i, j):
-                            ax, ay = vpts[i]
-                            bx, by = vpts[j]
-                            for tx, ty, k, r in touches:
-                                if i <= k < j:
-                                    if math.hypot(tx - ax, ty - ay) >= r and \
-                                       math.hypot(tx - bx, ty - by) >= r:
-                                        return False
-                            # Pad touches are exempt only when the pad EXACTLY
-                            # touches a kept endpoint's capsule end -- a bounding-
-                            # radius "near the endpoint" test waived mid-span pad
-                            # contacts on big rect pads (anyshake GNDA: C75/C76
-                            # stranded, masked in-pass by pour outline credit).
-                            for pad, k in pad_touches:
-                                if i <= k < j:
-                                    if point_to_pad_distance(ax, ay, pad) > w / 2.0 + COINCIDENCE_TOL and \
-                                       point_to_pad_distance(bx, by, pad) > w / 2.0 + COINCIDENCE_TOL:
-                                        return False
-                            return True
+                        # Greedy farthest-reachable-vertex shortcutting, in TWO
+                        # phases (#536, #958). Phase 1 is the original rule --
+                        # accept a connector only when it saves at least min_gain
+                        # -- and is unchanged, so it saves exactly the copper it
+                        # saved before. Phase 2 walks the phase-1 polyline again
+                        # under the same rule -- so a strictly shorter connector
+                        # that a phase-1 elbow exposes is taken too -- and ALSO
+                        # accepts a connector of EQUAL length (floating-point
+                        # roundoff only; min_gain is never a growth allowance)
+                        # when it emits strictly fewer legs: a grid jog that is
+                        # already a shortest octolinear path (diag / axis / diag)
+                        # collapses to one bend at the same length. The
+                        # tie-break must not ride in phase 1: taken farthest-first
+                        # it commits an equal-length prefix and its end vertex,
+                        # pre-empting a strictly shorter span that starts inside
+                        # it (a shortest-path detour around a pad: joint pass 3
+                        # legs at 10.24 mm, two phases 3 legs at 9.66 mm --
+                        # tests/test_958_smoother_equal_length.py).
+                        #
+                        # Same-net touches were found on the ORIGINAL legs. On a
+                        # later polyline a touch pins the leg its original leg
+                        # maps to (when that leg was kept) plus every leg within
+                        # its reach -- the rule the list was built with -- so a
+                        # touch phase 1 left at a kept endpoint pins the legs
+                        # around that vertex in phase 2.
+                        _tl = {}
+                        for tx, ty, k, r in touches:
+                            _tl.setdefault((tx, ty, r), set()).add(k)
+                        touch_list = [(tx, ty, r, ks) for (tx, ty, r), ks in _tl.items()]
+                        _pl = {}
+                        for pad, k in pad_touches:
+                            _pl.setdefault(id(pad), (pad, set()))[1].add(k)
+                        pad_list = list(_pl.values())
 
-                        # Greedy farthest-reachable-vertex shortcutting.
-                        spans = {}
-                        i = 0
-                        while i < n - 1:
-                            found = None
-                            for j in range(n, i + 1, -1):
-                                sub_len = cum[j] - cum[i]
-                                if sub_len <= min_gain:
-                                    break                 # closer spans only shrink
-                                if not span_free(i, j):
-                                    continue
-                                A, B = vpts[i], vpts[j]
-                                for inter in _octolinear_bends(A, B):
-                                    pts = [A] + inter + [B]
-                                    new_len = sum(math.hypot(pts[q + 1][0] - pts[q][0],
-                                                             pts[q + 1][1] - pts[q][1])
-                                                  for q in range(len(pts) - 1))
-                                    if new_len > sub_len - min_gain:
+                        def _legsets(poly, leg_pos):
+                            m = len(poly) - 1
+                            tl, pl = [], []
+                            for tx, ty, r, ks in touch_list:
+                                legs = {leg_pos[k] for k in ks if leg_pos[k] is not None}
+                                for p in range(m):
+                                    if _pt_seg_dist(tx, ty, poly[p][0], poly[p][1],
+                                                    poly[p + 1][0], poly[p + 1][1]) < r:
+                                        legs.add(p)
+                                tl.append((tx, ty, r, legs))
+                            for pad, ks in pad_list:
+                                legs = {leg_pos[k] for k in ks if leg_pos[k] is not None}
+                                r = pad_reach(pad) + w / 2.0 + COINCIDENCE_TOL
+                                for p in range(m):
+                                    if _pt_seg_dist(pad.global_x, pad.global_y,
+                                                    poly[p][0], poly[p][1],
+                                                    poly[p + 1][0], poly[p + 1][1]) < r:
+                                        legs.add(p)
+                                pl.append((pad, legs))
+                            return tl, pl
+
+                        # clears() is a function of FOREIGN copper only, which
+                        # nothing inside this chain's evaluation changes (the
+                        # commit comes after both phases), and phase 2 re-asks
+                        # phase 1's blocked probes -- same endpoints, same bends
+                        # -- so one memo per chain makes the second phase cost
+                        # only its genuinely new legs (measured on splitflap's
+                        # signal step: 5128 probes / 2.3 s before #958, 8525 /
+                        # 3.7 s with a bare second phase, 4666 / 2.1 s memoised).
+                        _cmemo = {}
+
+                        def clears_m(x1, y1, x2, y2):
+                            key = (x1, y1, x2, y2)
+                            v = _cmemo.get(key)
+                            if v is None:
+                                v = _cmemo[key] = clears(x1, y1, x2, y2, layer, net_id, w)
+                            return v
+
+                        def collapse(poly, leg_pos, allow_tie):
+                            """One greedy pass over polyline poly -> {i: (j, pts)}."""
+                            m = len(poly) - 1
+                            pcum = [0.0]
+                            for p in range(m):
+                                pcum.append(pcum[-1] + math.hypot(poly[p + 1][0] - poly[p][0],
+                                                                  poly[p + 1][1] - poly[p][1]))
+                            tl, pl = _legsets(poly, leg_pos)
+
+                            def span_free(i, j):
+                                ax, ay = poly[i]
+                                bx, by = poly[j]
+                                for tx, ty, r, legs in tl:
+                                    if any(i <= p < j for p in legs):
+                                        if math.hypot(tx - ax, ty - ay) >= r and \
+                                           math.hypot(tx - bx, ty - by) >= r:
+                                            return False
+                                # Pad touches are exempt only when the pad EXACTLY
+                                # touches a kept endpoint's capsule end -- a bounding-
+                                # radius "near the endpoint" test waived mid-span pad
+                                # contacts on big rect pads (anyshake GNDA: C75/C76
+                                # stranded, masked in-pass by pour outline credit).
+                                for pad, legs in pl:
+                                    if any(i <= p < j for p in legs):
+                                        if point_to_pad_distance(ax, ay, pad) > w / 2.0 + COINCIDENCE_TOL and \
+                                           point_to_pad_distance(bx, by, pad) > w / 2.0 + COINCIDENCE_TOL:
+                                            return False
+                                return True
+
+                            out = {}
+                            i = 0
+                            while i < m:
+                                found = None
+                                for j in range(m, i + 1, -1):
+                                    sub_len = pcum[j] - pcum[i]
+                                    if not allow_tie and sub_len <= min_gain:
+                                        break             # closer spans only shrink
+                                    if not span_free(i, j):
                                         continue
-                                    if all(clears(pts[q][0], pts[q][1],
-                                                  pts[q + 1][0], pts[q + 1][1],
-                                                  layer, net_id, w)
-                                           for q in range(len(pts) - 1)):
-                                        found = (j, pts, sub_len - new_len)
+                                    A, B = poly[i], poly[j]
+                                    for inter in _octolinear_bends(A, B):
+                                        pts = [A] + inter + [B]
+                                        lengths = [math.hypot(b[0] - a[0], b[1] - a[1])
+                                                   for a, b in zip(pts, pts[1:])]
+                                        new_len = sum(lengths)
+                                        if new_len > sub_len - min_gain and not (
+                                                allow_tie
+                                                and abs(new_len - sub_len) <= _SMOOTH_TIE_TOL
+                                                and sum(d > _SMOOTH_DEGENERATE_LEG
+                                                        for d in lengths) < j - i):
+                                            continue
+                                        if all(clears_m(pts[q][0], pts[q][1],
+                                                        pts[q + 1][0], pts[q + 1][1])
+                                               for q in range(len(pts) - 1)):
+                                            found = (j, pts)
+                                            break
+                                    if found:
                                         break
                                 if found:
-                                    break
-                            if found:
-                                spans[i] = found
-                                i = found[0]
-                            else:
-                                i += 1
+                                    out[i] = found
+                                    i = found[0]
+                                else:
+                                    i += 1
+                            return out
+
+                        def apply(tagged, out):
+                            """Splice accepted spans into a tagged polyline
+                            [(x, y, original_vertex_or_None)]. A bend within a
+                            hair of its span endpoint (near-diagonal spans put it
+                            there) is dropped and the endpoint kept exact, so no
+                            sliver leg is emitted; the gap is far below
+                            SOFT_JOINT_MIN_GAP."""
+                            res = []
+                            k = 0
+                            while k < len(tagged):
+                                if k in out:
+                                    j, pts = out[k]
+                                    res.append(tagged[k])
+                                    for x, y in pts[1:-1]:
+                                        if (math.hypot(x - pts[0][0], y - pts[0][1])
+                                                > _SMOOTH_DEGENERATE_LEG and
+                                                math.hypot(x - pts[-1][0], y - pts[-1][1])
+                                                > _SMOOTH_DEGENERATE_LEG):
+                                            res.append((x, y, None))
+                                    k = j
+                                else:
+                                    res.append(tagged[k])
+                                    k += 1
+                            return res
+
+                        tagged = [(x, y, k) for k, (x, y) in enumerate(vpts)]
+                        tagged = apply(tagged, collapse(vpts, list(range(n)), False))
+                        pos = {t[2]: p for p, t in enumerate(tagged) if t[2] is not None}
+                        leg_pos = [pos[k] if (k in pos and pos.get(k + 1) == pos[k] + 1)
+                                   else None for k in range(n)]
+                        tagged = apply(tagged, collapse([(t[0], t[1]) for t in tagged],
+                                                        leg_pos, True))
+
+                        # Back onto ORIGINAL vertex indices: each run between two
+                        # surviving original vertices that is not the untouched
+                        # original leg is one span (its pts may hold 2+ legs).
+                        spans = {}
+                        p = 0
+                        while p < len(tagged) - 1:
+                            a = tagged[p][2]
+                            q = p + 1
+                            while tagged[q][2] is None:
+                                q += 1
+                            b = tagged[q][2]
+                            if not (q == p + 1 and b == a + 1):
+                                pts = [(t[0], t[1]) for t in tagged[p:q + 1]]
+                                new_len = sum(math.hypot(pts[r + 1][0] - pts[r][0],
+                                                         pts[r + 1][1] - pts[r][1])
+                                              for r in range(len(pts) - 1))
+                                spans[a] = (b, pts, max(0.0, cum[b] - cum[a] - new_len))
+                            p = q
                         if not spans:
                             continue
 
@@ -4587,7 +4737,7 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
                                     # endpoint); the sub-writer-precision gap is
                                     # far below SOFT_JOINT_MIN_GAP.
                                     if math.hypot(pts[q + 1][0] - pts[q][0],
-                                                  pts[q + 1][1] - pts[q][1]) > 1e-5:
+                                                  pts[q + 1][1] - pts[q][1]) > _SMOOTH_DEGENERATE_LEG:
                                         new_chain_segs.append(Segment(
                                             start_x=pts[q][0], start_y=pts[q][1],
                                             end_x=pts[q + 1][0], end_y=pts[q + 1][1],
