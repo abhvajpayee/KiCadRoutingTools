@@ -1472,6 +1472,16 @@ Castellated edge rows, card edges and a USB shell are *meant* to cross the
 boundary. Declare them in `must_lock` **and** `edge_connectors` — the second is
 what stops `oob_count` reporting them as defects forever.
 
+**`must_lock` does not pin the pose, and on a connector that matters.** It is a
+claim about the FILE that `place_seed` honours by stamping `(locked yes)` into
+its OUTPUT — *after* it has seated the part. So a declared edge connector
+carrying `must_lock` and no file lock is seated by the seeder at its band's
+midpoint at whatever angle it came in with, byte for byte as though nothing had
+been declared (measured). If its pose is a decision, place it and stamp the
+lock in the BOARD first — `place_pose set <REF> <X> <Y> --rot <DEG>` then
+`place_pose lock <REF>` — and the seeder will leave it alone. P1 refuses a zone
+plan whose declared connectors are not pinned that way.
+
 Four things follow that nothing will tell you:
 
 - **`check_drc` has no castellation exemption.** A track landing on a half-hole
