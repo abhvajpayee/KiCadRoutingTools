@@ -2274,15 +2274,53 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
             # entirely when nothing is declared and no keep-out exists, so a
             # board that declares nothing is unchanged.
             #
-            # The three arming conditions are a UNION: #701's keep-out,
-            # #706's declared position and #797's exclusive zone each need
-            # the ladder, and any one of them alone leaves the other two
-            # parking a connector in the interior.
+            # The four arming conditions are a UNION: #701's keep-out,
+            # #706's declared position, #797's exclusive zone and run 27's
+            # already-placed neighbour each need the ladder, and any one of
+            # them alone leaves the others parking a connector in the
+            # interior or on top of a fixed part.
+            #
+            # RUN 27, the fourth: `placed` at this point is the parts whose
+            # pose is AUTHORITATIVE -- locked in the file, or outside an
+            # explicit `seed_refs` scope -- and this stage seats a connector
+            # without looking at any of them. Measured on esp_prog seeded
+            # from a zone plan: CON2, declared on the south edge with band
+            # 0.25-0.75, took the band's midpoint and put pin 1 through the
+            # fixed USB socket's ground tab (0.198mm2 of pad intersection, a
+            # short). Every one of ten seeds did it, the seed gate passed
+            # them all because a pad conflict is not a budgeted channel, and
+            # `check_assembly` then called each one NOT BUILDABLE. The band
+            # had a clear seat the whole time -- run 26 found it by hand and
+            # narrowed the declaration to 0.52-0.75 to force it.
             _slide = ((0.0,) if not (state.keepouts_for.get(ref)
                                      or _dec is not None
-                                     or state.exclusive_for.get(ref)) else
+                                     or state.exclusive_for.get(ref)
+                                     or placed) else
                       (0.0, 0.05, -0.05, 0.1, -0.1, 0.15, -0.15,
                        0.2, -0.2, 0.3, -0.3, 0.4, -0.4))
+
+            def _shorted_by(px, py):
+                """Already-placed refs whose pads or holes this seat lands on.
+
+                `placed`, never `state.parts`: a part still in the pile sits
+                at one meaningless coordinate, and vetoing an honest edge
+                seat against it is what `_seat_edge`'s `exclude` comment
+                warns about -- the connector slides along the edge until one
+                fraction is "free" and hangs off the end. Grows as this stage
+                seats each connector, so two on one edge see each other.
+                """
+                ctx = state.legality_ctx
+                if ctx is None:
+                    return []
+                hit = []
+                for other in sorted(placed):
+                    if other == ref or other not in state.parts:
+                        continue
+                    sf = ctx.pair_shortfall(ref, other,
+                                            pose_a=(px, py, part.rot))
+                    if sf.pad > 1e-6 or sf.hole > 1e-6:
+                        hit.append(other)
+                return hit
             # SCALED to the declared window, exactly as `_seat_edge`'s ladder
             # is. Unscaled, a `center_on_edge {tolerance_mm: 1.0}` window on
             # splitflap's 198.12mm north edge is 0.0101 wide and every
@@ -2291,6 +2329,13 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
             _sstep = ((f_hi - f_lo) / 0.8) if _win is not None else 1.0
             _base_frac = frac
             _why: List[str] = []
+            # The first rung that is a legal SEAT but lands on a placed part,
+            # so a band with no clear seat anywhere still gets its declared
+            # edge instead of being dropped to the stages that park a
+            # connector in the interior. The conflict is named on the record
+            # and `place_seed`'s gate refuses it; trading the declared edge
+            # for it would lose both.
+            _fallback = None
             for _df in _slide:
                 frac = min(f_hi, max(f_lo, _base_frac + _df * _sstep))
                 _x, _y = _edge_pose(part, bounds, edge, frac, overhang)
@@ -2301,7 +2346,19 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
                                           float(hi) if hi is not None
                                           else max(2.0 * overhang, lo + 1.0),
                                           reasons=_why):
-                    break
+                    _hit = _shorted_by(_x, _y)
+                    if not _hit:
+                        break
+                    if _fallback is None:
+                        _fallback = (frac, _hit)
+            else:
+                if _fallback is not None:
+                    frac, _hit = _fallback
+                    notes.append(
+                        f"edge connector {ref}: no seat on the {edge} band "
+                        f"clears {', '.join(_hit)}, so it is seated where it "
+                        f"was declared and the conflict is left for the gate "
+                        f"-- narrow the band, or move what it lands on")
             x, y = _edge_pose(part, bounds, edge, frac, overhang)
             x, y, converged = _edge_correct(state, ref, edge, x, y, overhang)
             if not converged:
