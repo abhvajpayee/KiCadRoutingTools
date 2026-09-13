@@ -2300,7 +2300,13 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
                        0.2, -0.2, 0.3, -0.3, 0.4, -0.4))
 
             def _shorted_by(px, py):
-                """Already-placed refs whose pads or holes this seat lands on.
+                """Already-placed refs this seat comes within clearance of.
+
+                `pair_shortfall` measures a CLEARANCE shortfall, not contact,
+                so a seat that merely crowds a placed part arms the slide too.
+                Deliberately the wider predicate: the seat is free to move
+                along its own band, so preferring a pose that is legal over
+                one that is merely not-touching costs nothing.
 
                 `placed`, never `state.parts`: a part still in the pile sits
                 at one meaningless coordinate, and vetoing an honest edge
@@ -2316,8 +2322,12 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
                 for other in sorted(placed):
                     if other == ref or other not in state.parts:
                         continue
-                    sf = ctx.pair_shortfall(ref, other,
-                                            pose_a=(px, py, part.rot))
+                    # The pose as it will be WRITTEN (`apply_move` rounds to
+                    # 3dp below), so the predicate and the seat cannot differ
+                    # by half a micron against a 1e-6 threshold.
+                    sf = ctx.pair_shortfall(
+                        ref, other,
+                        pose_a=(round(px, 3), round(py, 3), part.rot))
                     if sf.pad > 1e-6 or sf.hole > 1e-6:
                         hit.append(other)
                 return hit
@@ -2329,12 +2339,13 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
             _sstep = ((f_hi - f_lo) / 0.8) if _win is not None else 1.0
             _base_frac = frac
             _why: List[str] = []
-            # The first rung that is a legal SEAT but lands on a placed part,
-            # so a band with no clear seat anywhere still gets its declared
-            # edge instead of being dropped to the stages that park a
-            # connector in the interior. The conflict is named on the record
-            # and `place_seed`'s gate refuses it; trading the declared edge
-            # for it would lose both.
+            # The FIRST rung that is a legal seat but crowds a placed part --
+            # the declared position when rung 0.0 was legal, the nearest legal
+            # rung to it otherwise. So a band with no clear seat anywhere
+            # still gets its declared edge instead of being dropped to the
+            # stages that park a connector in the interior. The conflict is
+            # named on the record and `place_seed`'s gate refuses it; trading
+            # the declared edge for it would lose both.
             _fallback = None
             for _df in _slide:
                 frac = min(f_hi, max(f_lo, _base_frac + _df * _sstep))
@@ -2356,9 +2367,10 @@ def seed_from_intent(pcb_data, pcb_file: str, intent, rng: random.Random, *,
                     frac, _hit = _fallback
                     notes.append(
                         f"edge connector {ref}: no seat on the {edge} band "
-                        f"clears {', '.join(_hit)}, so it is seated where it "
-                        f"was declared and the conflict is left for the gate "
-                        f"-- narrow the band, or move what it lands on")
+                        f"clears {', '.join(_hit)}, so it keeps the nearest "
+                        f"legal seat to its declared position and the "
+                        f"conflict is left for the gate -- narrow the band, "
+                        f"or move what it crowds")
             x, y = _edge_pose(part, bounds, edge, frac, overhang)
             x, y, converged = _edge_correct(state, ref, edge, x, y, overhang)
             if not converged:
