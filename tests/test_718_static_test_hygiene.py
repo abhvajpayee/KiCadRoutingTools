@@ -721,7 +721,7 @@ _DECLARED_BASELINE_COUNT = 21
 #: says what the shape actually is.
 _NOT_A_BASELINE = (
     (r'tests/stress/manifest_set\d+(monster)?\.json$',
-     'stress-corpus manifests -- set1..set28 plus the three `monster` sets: '
+     'stress-corpus manifests -- set1..set29 plus the three `monster` sets: '
      'they name the boards to fetch and record nothing'),
     (r'tests/stress/modal_sweep/arms\.[A-Za-z0-9_]+\.json$',
      'sweep ARM configurations, an input to a study. Deliberately not the '
