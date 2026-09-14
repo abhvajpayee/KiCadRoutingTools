@@ -17,7 +17,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / p) for p in ('py_router', 'py_placer', 'tests')]
 from copy_board import copy_board
-from kicad_parser import parse_kicad_pcb
+from kicad_parser import parse_kicad_pcb, iter_footprint_blocks, find_matching_paren
 from placement.legality import grade_pad_legality, grade_pad_edge_clearance
 from placement.writer import write_placed_output
 from placement.seeder import stamp_locked
@@ -209,6 +209,87 @@ class EdgeFloor(unittest.TestCase):
         pcb.source_path = None
         report = grade_pad_edge_clearance(pcb, .55)
         self.assertFalse(report['complete'])
+
+    def test_simplified_primitive_coverage_survives_cli_write(self):
+        board = self.fixture('control')
+        original = board.read_text(encoding='utf-8')
+        _, _, block, _, _ = next(b for b in iter_footprint_blocks(original)
+                                if b[4] == 'Y1')
+        start = block.index('(pad ')
+        end = find_matching_paren(block, start)
+        pad_text = block[start:end]
+        variants = (
+            ('chamfered pad', '(roundrect_rratio 0.25) (chamfer_ratio 0.05) '
+                              '(chamfer top_left top_right bottom_left bottom_right)'),
+            ('per-layer padstack', '(padstack (mode custom) '
+                                  '(layer "F.Cu" (shape rect) (size 2 1)))'),
+        )
+        for reason, spec in variants:
+            with self.subTest(reason=reason):
+                replacement = pad_text[:-1] + spec + ')'
+                board.write_text(original.replace(block, block[:start] + replacement
+                                                   + block[end:], 1), encoding='utf-8')
+                parsed = parse_kicad_pcb(str(board))
+                self.assertEqual(parsed.footprints['Y1'].pads[0].geometry_approximations,
+                                 (reason,))
+                before = digest(board)
+                s, out = self.cli(board, 'rotate', 'Y1', '0', '--relative')
+                self.assertTrue(s['no_worse'])
+                self.assertFalse(s['legal'])
+                self.assertFalse(s['pad_edge_after']['complete'])
+                self.assertIn(reason, s['pad_edge_after']['unmeasured'][0]['reason'])
+                self.assertEqual(parse_kicad_pcb(str(out)).footprints['Y1'].pads[0]
+                                 .geometry_approximations, (reason,))
+                s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative', expected=4,
+                                extra=('--strict-legal',), output=board)
+                self.assertFalse(s['legal'])
+                self.assertEqual(digest(board), before)
+
+    def test_custom_edge_requirements_are_explicitly_unmeasured(self):
+        board = self.fixture()
+        dru = board.with_suffix('.kicad_dru')
+        dru.write_text('(version 1)\n(rule "edge floor" '
+                       '(constraint edge_clearance (min 0.75mm)))\n', encoding='utf-8')
+        identity = digest(dru)
+        s, out = self.cli(board, 'set', 'Y1', '124.7', '103.15', '--rot', '270')
+        self.assertTrue(s['no_worse'])
+        self.assertFalse(s['legal'])
+        self.assertEqual(s['pad_edge_conflicts_after'], 0)  # scalar .55 only
+        self.assertFalse(s['pad_edge_after']['complete'])
+        missing = s['pad_edge_after']['rules_unmeasured']
+        self.assertEqual(missing[0]['rule'], 'edge floor')
+        self.assertEqual(missing[0]['declared'], {'min': .75})
+        self.assertIn('not evaluated', missing[0]['reason'])
+        self.assertEqual(digest(out.with_suffix('.kicad_dru')), identity)
+        before = digest(out)
+        self.cli(out, 'rotate', 'Y1', '0', '--relative', expected=4,
+                 extra=('--strict-legal',), output=out)
+        self.assertEqual(digest(out), before)
+        # A copper-only custom rule is not an unmeasured edge requirement.
+        dru.write_text('(version 1)\n(rule "copper" '
+                       '(constraint clearance (min 0.25mm)))\n', encoding='utf-8')
+        s, _ = self.cli(board, 'set', 'Y1', '124.7', '103.15', '--rot', '270')
+        self.assertTrue(s['legal'])
+        self.assertEqual(s['pad_edge_after']['rules_unmeasured'], [])
+
+    def test_open_edge_is_not_hidden_by_closed_rectangle(self):
+        board = self.fixture('control')
+        text = board.read_text(encoding='utf-8')
+        extra = ('(gr_line (start 122 105.1) (end 127 105.1) '
+                 '(stroke (width 0.05) (type default)) (layer "Edge.Cuts"))\n')
+        board.write_text(text[:text.rfind(')')] + extra + ')\n', encoding='utf-8')
+        s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative')
+        self.assertTrue(s['no_worse'])
+        self.assertFalse(s['legal'])
+        self.assertFalse(s['pad_edge_after']['complete'])
+        self.assertTrue(s['pad_edge_after']['unmeasured'])
+        # Subdividing an actual rectangle side still supplies full coverage.
+        from placement.legality import _segments_cover_rectangle
+        edges = [((0, 0), (2, 0)), ((2, 0), (4, 0)), ((4, 0), (4, 3)),
+                 ((4, 3), (0, 3)), ((0, 3), (0, 0))]
+        self.assertTrue(_segments_cover_rectangle(edges, (0, 0, 4, 3)))
+        self.assertFalse(_segments_cover_rectangle(edges[:-1], (0, 0, 4, 3)))
+        self.assertFalse(_segments_cover_rectangle(edges + [edges[0]], (0, 0, 4, 3)))
 
 
 if __name__ == '__main__':
