@@ -2,6 +2,10 @@
 
 This is the placement-legality slice of [#967](https://github.com/drandyhaas/KiCadRoutingTools/issues/967).
 It does not close the issue's broader independent-DRC rule-contract work.
+The [2026-09-14 follow-up](issue-964-evidence/README.md) records fresh independent
+reproduction, additional coverage defects found and corrected, and the final
+verified revision. The earlier measurements below remain pinned to their
+original revisions; they are not a substitute for that final verification.
 The original failure was reproduced on current upstream
 `5a7fbcb6ee4deebd1d9ec1d5bd094d8681f502f3`, not inferred from an older report.
 The issue had no comments when read. Implementation and verification used
@@ -30,7 +34,7 @@ coverage and unmeasured geometry. Pose summaries distinguish original requested
 values, resolved values and their sources. A lower-level grader receiving an
 already resolved argument calls its source `caller argument`, not `cli`.
 
-Rectangular Edge.Cuts with rect/circle/oval/roundrect pads use analytic copper
+Rectangular Edge.Cuts with ordinary rect/circle/oval/roundrect pads use analytic copper
 extrema, including arbitrary rotation and rounded corners. The absolute
 tolerance is **1e-6 mm (1 nm)**; equality passes. A bbox without evidence of a
 closed rectangle cannot certify coverage. Nonrectangular outlines retain the
@@ -38,7 +42,17 @@ existing DRC sampler's findings and are explicitly partially measured. Custom
 pad polygons also retain findings but remain partially measured: the parser can
 tessellate curves into inscribed polygons. For example, a radius .5 circle at
 half a 32-point sampling step can understate copper reach by .0024076 mm.
-Unsupported pad geometry is explicitly unmeasured.
+Unsupported pad geometry is explicitly unmeasured. Chamfered variants and
+per-layer padstacks are also unmeasured: their simplified parser shape is not
+the native copper. All source edge segments must cover a closed rectangle,
+including when the parsed rings omitted an open internal edge. A live-board
+caller must supply its current saved board for this source check.
+
+Custom `edge_clearance` declarations are recorded in `pad_edge.rules_unmeasured`
+with the rule name, source and declared values. This scalar edge check does not
+evaluate their scope, precedence or effective per-pad requirements. Their
+presence prevents complete coverage and `legal:true`; a no-worse operation may
+still proceed. Custom copper-clearance rules stay in their separate channel.
 
 `legal` requires clean measured pad/hole/outline channels and complete edge
 coverage. `no_worse` remains relative to the unchanged input: inherited defects
