@@ -10,9 +10,12 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import os
+import stat
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / p) for p in ('py_router', 'py_placer', 'tests')]
@@ -58,7 +61,7 @@ class EdgeFloor(unittest.TestCase):
         args = [sys.executable, '-X', 'utf8', str(ROOT/'py_placer/place_pose.py'),
                 str(board), str(out), '--clearance', '.25']
         if floor is not None:
-            args += ['--board-edge-clearance', floor]
+            args += ['--board-edge-clearance=' + floor]
         args += list(extra) + list(verbs)
         result = subprocess.run(args, cwd=ROOT, capture_output=True,
                                 text=True, encoding='utf-8', timeout=90)
@@ -290,6 +293,94 @@ class EdgeFloor(unittest.TestCase):
         self.assertTrue(_segments_cover_rectangle(edges, (0, 0, 4, 3)))
         self.assertFalse(_segments_cover_rectangle(edges[:-1], (0, 0, 4, 3)))
         self.assertFalse(_segments_cover_rectangle(edges + [edges[0]], (0, 0, 4, 3)))
+
+    def test_invalid_floors_and_malformed_rules(self):
+        board = self.fixture('control')
+        for floor in ('nan', 'inf', '-inf', '-1'):
+            s, out = self.cli(board, 'rotate', 'Y1', '0', '--relative', floor=floor,
+                              expected=2, extra=('--strict-legal',))
+            self.assertIn('finite and nonnegative', s['refused'])
+            self.assertFalse(out.exists())
+        valid = '(version 1) (rule "edge" (constraint edge_clearance (min .75mm)))'
+        for text in (valid[:-1], valid + ')', '(version 1) (rule "unterminated',
+                     '(' + valid + ')', valid.replace('"edge"', '")"')):
+            board.with_suffix('.kicad_dru').write_text(text, encoding='utf-8')
+            s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative',
+                            expected=4, extra=('--strict-legal',))
+            self.assertFalse(s['pad_edge_after']['complete'])
+            self.assertIn('unreadable', s['pad_edge_after']['rules_unmeasured'][0]['reason'])
+        board.with_suffix('.kicad_dru').unlink()
+        for value in (float('nan'), -1):
+            board.with_suffix('.kicad_pro').write_text(json.dumps({
+                'board': {'design_settings': {'rules': {'min_copper_edge_clearance': value}}}
+            }), encoding='utf-8')
+            s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative', floor=None,
+                            expected=4, extra=('--strict-legal',))
+            self.assertIn('finite and nonnegative',
+                          s['pad_edge_after']['rules_unmeasured'][0]['reason'])
+        from design_rules import validate_dru_structure
+        validate_dru_structure('# ignored )\n(version 1) (rule "name (quoted)" '
+                               '(constraint clearance (min .25mm)))')
+
+    def test_strict_near_requires_clean_candidates(self):
+        board = self.fixture()
+        for y in ('103.21', '103.2'):
+            s, out = self.cli(board, 'set', 'Y1', '--near', '124.7', y, '--rot', '270',
+                              extra=('--strict-legal', '--radius', '.5', '--snap-step', '.05',
+                                     '--snap-tries', '24'))
+            self.assertTrue(s['legal'])
+            self.assertTrue(s['snapped'])
+            measured = grade_pad_legality(parse_kicad_pcb(str(out)), .25, edge_margin=.55,
+                                          pcb_file=str(out))
+            self.assertEqual(measured['pad_edge_conflicts'], 0)
+
+    def test_output_requirements_and_late_write_rollback(self):
+        board = self.fixture('control')
+        out = self.work/'existing.kicad_pcb'
+        copy_board(str(board), str(out))
+        rule = out.with_suffix('.kicad_dru')
+        rule.write_text('(version 1) (rule "edge" (constraint edge_clearance (min .75mm)))')
+        identities = digest(out), digest(rule)
+        s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative', expected=2,
+                        extra=('--strict-legal',), output=out)
+        self.assertIn('requirement siblings absent', s['refused'])
+        self.assertEqual((digest(out), digest(rule)), identities)
+        rule.unlink()
+        src_brief = board.with_suffix('.design-brief.json')
+        dst_brief = out.with_suffix('.design-brief.json')
+        src_brief.write_text('{"requirement": "input"}')
+        dst_brief.write_text('{"requirement": "prior output"}')
+        identities = digest(out), digest(dst_brief)
+        if os.name == 'nt':
+            out.chmod(stat.S_IREAD)
+            try:
+                s, _ = self.cli(board, 'rotate', 'Y1', '0', '--relative', expected=2, output=out)
+                self.assertEqual(s['output_state'], 'unchanged')
+                self.assertEqual(s['rollback_errors'], [])
+            finally:
+                out.chmod(stat.S_IREAD | stat.S_IWRITE)
+            self.assertEqual((digest(out), digest(dst_brief)), identities)
+        # Portable fault injection reaches the same late replacement failure;
+        # a second fault tests honest disclosure when rollback also fails.
+        from placement.pose_ops import _promote, PoseRefusal
+        real_replace = os.replace
+        for fail_restore in (False, True):
+            def replace(src, dst):
+                if str(dst) == str(out) or (fail_restore and '.krt-backup-' in str(src)):
+                    raise OSError('injected replacement failure')
+                return real_replace(src, dst)
+            with patch('placement.pose_ops.os.replace', side_effect=replace):
+                with self.assertRaises(PoseRefusal) as refusal:
+                    _promote(str(board), str(out))
+            summary = refusal.exception.extra['summary']
+            self.assertEqual(summary['output_state'], 'partial' if fail_restore else 'unchanged')
+            if fail_restore:
+                self.assertNotIn('Nothing was written', summary['refused'])
+                backup = Path(summary['rollback_errors'][0]['backup'])
+                self.assertTrue(backup.is_file())
+                real_replace(backup, dst_brief)
+            self.assertEqual((digest(out), digest(dst_brief)), identities)
+        self.assertFalse(list(self.work.glob('.krt-backup-*')))
 
 
 if __name__ == '__main__':

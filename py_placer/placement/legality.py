@@ -3356,6 +3356,8 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
     """
     from check_drc import board_edge_geometry, check_pad_board_edge
 
+    if not math.isfinite(required) or required < 0:
+        raise ValueError('board-edge-clearance must be finite and nonnegative (mm)')
     bi = pcb_data.board_info
     bounds = getattr(bi, 'board_bounds', None)
     rings, outer, cutouts = board_edge_geometry(bi)
@@ -3374,12 +3376,14 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
             pass
     rules_unmeasured = []
     if source:
-        from design_rules import parse_dru
+        from design_rules import parse_dru, validate_dru_structure
         rule_path = os.path.splitext(source)[0] + '.kicad_dru'
         if os.path.exists(rule_path):
             try:
                 with open(rule_path, encoding='utf-8') as stream:
-                    declared, _notes = parse_dru(stream.read())
+                    text = stream.read()
+                validate_dru_structure(text)
+                declared, _notes = parse_dru(text)
                 rules_unmeasured = [
                     {'rule': rule.name, 'source': rule_path,
                      'constraint': 'edge_clearance',
@@ -3389,6 +3393,20 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
             except (OSError, ValueError) as exc:
                 rules_unmeasured = [{'source': rule_path,
                                      'reason': 'custom rules unreadable: ' + str(exc)}]
+        from list_nets import read_design_rules
+        declared_edge = (read_design_rules(source).get('constraints') or {}).get(
+            'min_copper_edge_clearance')
+        if declared_edge is not None:
+            try:
+                valid = math.isfinite(float(declared_edge)) and float(declared_edge) >= 0
+            except (TypeError, ValueError):
+                valid = False
+            if not valid:
+                rules_unmeasured.append({
+                    'source': os.path.splitext(source)[0] + '.kicad_pro',
+                    'constraint': 'min_copper_edge_clearance',
+                    'declared': repr(declared_edge),
+                    'reason': 'project edge clearance must be finite and nonnegative'})
     findings, unmeasured = [], []
     measured = 0
     minimum = None
@@ -3407,6 +3425,8 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
             approximations = getattr(pad, 'geometry_approximations', ())
             reasons = (['simplified pad geometry: ' + ', '.join(approximations)]
                        if approximations else [])
+            if pad.shape == 'circle' and abs(pad.size_x - pad.size_y) > EPS:
+                reasons.append('unequal-axis circle uses unsupported native geometry')
             if not rectangular:
                 hit, amount, edge = check_pad_board_edge(
                     pad, rings, outer, cutouts, required, bounds, 0.0)
@@ -3431,7 +3451,13 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
                           pad.roundrect_rratio * min(pad.size_x, pad.size_y)
                           if pad.shape == 'roundrect' else 0.0)
                 radius = min(radius, hx, hy)
-                angle = math.radians(pad.rect_rotation or 0.0)
+                tilt = pad.rect_rotation or 0.0
+                if tilt == 0.0:
+                    # The shared broad phase bakes rotations within one degree
+                    # of a cardinal axis into size_x/y. Recover the remaining
+                    # tilt from the true pad angle for exact edge extrema.
+                    tilt = ((getattr(pad, 'rotation', 0.0) or 0.0) + 45) % 90 - 45
+                angle = math.radians(tilt)
                 c, s = abs(math.cos(angle)), abs(math.sin(angle))
                 ex = (hx-radius)*c + (hy-radius)*s + radius
                 ey = (hx-radius)*s + (hy-radius)*c + radius

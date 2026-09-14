@@ -37,7 +37,9 @@ Two rules worth stating because getting either wrong is silent:
 from __future__ import annotations
 
 import os
+import math
 import shutil
+import stat
 import tempfile
 from typing import Dict, List, Optional, Sequence
 
@@ -116,6 +118,9 @@ def resolve_knobs(board_path: str, clearance=None, board_edge_clearance=None,
     import routing_defaults as defaults
     clr, edge, knobs = list_nets.board_floor_knobs(
         board_path, clearance, board_edge_clearance)
+    if not math.isfinite(edge) or edge < 0:
+        raise PoseRefusal('board-edge-clearance must be finite and nonnegative (mm); '
+                          'got %r' % edge, code=2)
     tw = track_width
     if tw is None:
         tw = (list_nets.board_default_netclass_param(board_path, 'track_width')
@@ -668,7 +673,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
             summary['snap_census'] = {
                 'skipped': 'snap applies to exactly one pose op; this call '
                            'carries %d' % len(placements)}
-        if bad and snap and len(placements) == 1:
+        if (bad or (strict and not is_clean(after))) and snap and len(placements) == 1:
             # Rank around the REQUESTED point, not the part's old one: the
             # sweep in `rank_poses` is centred on where the part sits in the
             # board it is handed, and on the staged board that is exactly
@@ -727,7 +732,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
             for cp in [p for p in poses if p['rung'] == 'ranked'][:snap_tries]:
                 tried += 1
                 trial, pcb_c, g, b = _grade_pose(cp)
-                if not b:
+                if not b and (not strict or is_clean(g)):
                     chosen = (cp, trial, pcb_c, g, b)
                     break
             limit = chosen[0]['dist_mm'] if chosen else float('inf')
@@ -736,7 +741,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
                        and (p['dist_mm'] or 0.0) < limit][:snap_tries]:
                 tried += 1
                 trial, pcb_c, g, b = _grade_pose(cp)
-                if not b:
+                if not b and (not strict or is_clean(g)):
                     chosen = (cp, trial, pcb_c, g, b)   # strictly nearer
                     break
             summary['snap_census']['candidates_tried'] = tried
@@ -956,42 +961,79 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
 def _promote(staged: str, out_path: str, summary: Optional[Dict] = None) -> None:
     """Move a finished staged board and its siblings onto the output path.
 
-    ALL OR NOTHING. Every file is copied to a `.krt-tmp` name beside its
-    destination and only then `os.replace`d into place, so a failure part way
-    leaves the previous output exactly as it was. It used to copy the board and
-    then the siblings inside one `try`, and a sibling that could not be written
-    left the NEW board on disk beside the OLD project -- the #441 pairing
-    hazard -- while the refusal said "nothing was written". Measured with a
-    read-only `.kicad_pro`: an 11-byte output file came back at 831914 bytes
-    and the summary reported `output: null`.
+    Stage all files and back up prior destinations before replacing anything.
+    Roll back completed replacements on failure. If restoration itself fails,
+    report the affected paths and retain backups instead of claiming atomicity.
+    Destination-only requirements cannot join a board graded without them.
     """
     from copy_board import SIBLING_EXTS
     src_base = os.path.splitext(staged)[0]
     dst_base = os.path.splitext(out_path)[0]
     pairs = [(staged, out_path)]
+    extra_requirements = [dst_base + ext for ext in SIBLING_EXTS
+                          if ext != '.kicad_prl' and os.path.exists(dst_base + ext)
+                          and not os.path.isfile(src_base + ext)]
+    if extra_requirements:
+        doc = dict(summary or {})
+        reason = (
+            'output has requirement siblings absent from the graded input: %s. '
+            'Use a fresh output path or reconcile these declarations with the input.'
+            % ', '.join(extra_requirements))
+        doc.update(output=None, refused='; '.join(x for x in (doc.get('refused'), reason) if x))
+        raise PoseRefusal(doc['refused'], code=2, summary=doc)
     for ext in SIBLING_EXTS:
         if os.path.isfile(src_base + ext):
             pairs.append((src_base + ext, dst_base + ext))
     staged_tmps = []
+    backups = {}
+    replaced = []
+    recovery_paths = []
     try:
+        for _src, dst in pairs:
+            if os.path.lexists(dst) and (not os.path.isfile(dst) or os.path.islink(dst)):
+                raise OSError('destination is not a regular file: %s' % dst)
         for src, dst in pairs:
             tmp = dst + '.krt-tmp'
             shutil.copyfile(src, tmp)
             staged_tmps.append((tmp, dst))
+        for _src, dst in pairs:
+            backups[dst] = None
+            if os.path.exists(dst):
+                fd, backup = tempfile.mkstemp(prefix='.krt-backup-', dir=os.path.dirname(
+                    os.path.abspath(dst)))
+                os.close(fd)
+                backups[dst] = backup
+                shutil.copy2(dst, backup)
         # NOT `pop()` before the replace: a failing `os.replace` would then
         # have already removed its own tmp from the cleanup list, and the file
         # it could not move was left beside the output. Remove only on
         # success, so `finally` still owns everything that did not land.
         for entry in list(reversed(staged_tmps)):
             os.replace(entry[0], entry[1])
+            replaced.append(entry[1])
             staged_tmps.remove(entry)
     except OSError as exc:
-        # A missing output directory used to surface as a FileNotFoundError
-        # traceback and an exit 1 that the CLI's own table does not list.
-        reason = ("cannot write %s: %s. Nothing was written: the board and "
-                  "its siblings are staged beside their destination and moved "
-                  "into place together, so a failure here leaves the previous "
-                  "output untouched." % (out_path, exc))
+        rollback_errors = []
+        for dst in reversed(replaced):
+            try:
+                backup = backups[dst]
+                if backup is None:
+                    os.remove(dst)
+                else:
+                    os.replace(backup, dst)
+                    backups[dst] = None
+            except OSError as restore_error:
+                rollback_errors.append({'path': dst, 'error': str(restore_error),
+                                        'backup': backups[dst]})
+                if backups[dst]:
+                    recovery_paths.append(backups[dst])
+        reason = 'cannot write %s: %s. ' % (out_path, exc)
+        if rollback_errors:
+            reason += ('Output partially changed; restoration failed for %s. '
+                       'Retained backup paths are listed in rollback_errors.'
+                       % ', '.join(row['path'] for row in rollback_errors))
+        else:
+            reason += 'Nothing was written: previous output files were preserved or restored.'
         doc = dict(summary or {})
         # The grade this run already did is kept, and any finding it was
         # forced past is kept WITH the write error rather than replaced by it:
@@ -999,8 +1041,17 @@ def _promote(staged: str, out_path: str, summary: Optional[Dict] = None) -> None
         # waived finding disappears.
         doc['refused'] = '; '.join(x for x in (doc.get('refused'), reason) if x)
         doc['output'] = None
+        doc['output_state'] = 'partial' if rollback_errors else 'unchanged'
+        doc['rollback_errors'] = rollback_errors
         raise PoseRefusal(reason, code=2, summary=doc)
     finally:
+        for backup in backups.values():
+            if backup and backup not in recovery_paths:
+                try:
+                    os.chmod(backup, os.stat(backup).st_mode | stat.S_IWUSR)
+                    os.remove(backup)
+                except OSError:
+                    pass
         for tmp, _dst in staged_tmps:
             try:
                 os.remove(tmp)

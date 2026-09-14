@@ -4,6 +4,7 @@ Run with KiCad Python. Missing pcbnew exits 77, never an unmeasured pass.
 """
 import copy
 import hashlib
+import math
 from pathlib import Path
 import sys
 import tempfile
@@ -82,6 +83,37 @@ def main():
                        for row in result['unmeasured']), result
         print(f'PASS: native chamfer gap {gap:.6f}, padstack gap {back_gap:.6f} mm < .55 mm; '
               'both parsers disclose chamfer/padstack coverage')
+        # The routing broad phase snaps within one degree of cardinal axes.
+        # Exact edge grading must recover the actual copper tilt in both parsers.
+        for angle in (0, .5, 1, 1.0001, 89.5, 90, 90.5, 179.5, 269.5, 359.5):
+            board = pcbnew.LoadBoard(str(source))
+            fp = next(f for f in board.GetFootprints() if f.GetReference() == 'Y1')
+            pad = list(fp.Pads())[0]
+            pad.SetShape(pcbnew.PAD_SHAPE_RECT)
+            pad.SetSize(pcbnew.VECTOR2I(2000000, 1000000))
+            pad.SetOrientation(pcbnew.EDA_ANGLE(angle, pcbnew.DEGREES_T))
+            pad.SetPosition(pcbnew.VECTOR2I(130000000, 104000000))
+            pcbnew.SaveBoard(str(path), board)
+            board = pcbnew.LoadBoard(str(path))
+            expected = 1.5 - (abs(math.sin(math.radians(angle)))
+                              + .5 * abs(math.cos(math.radians(angle))))
+            for parsed in (parse_kicad_pcb(str(path)), build_pcb_data_from_board(board)):
+                target = parsed.footprints['Y1']
+                target.pads = [target.pads[0]]
+                parsed.footprints = {'Y1': target}
+                result = grade_pad_edge_clearance(parsed, .55, str(path))
+                assert result['complete'], result
+                assert abs(result['minimum_gap_mm'] - expected) < 1e-6, (angle, result)
+        pad = list(next(f for f in board.GetFootprints() if f.GetReference() == 'Y1').Pads())[0]
+        pad.SetShape(pcbnew.PAD_SHAPE_CIRCLE)
+        pad.SetSize(pcbnew.VECTOR2I(2000000, 1000000))
+        pcbnew.SaveBoard(str(path), board)
+        board = pcbnew.LoadBoard(str(path))
+        for parsed in (parse_kicad_pcb(str(path)), build_pcb_data_from_board(board)):
+            result = grade_pad_edge_clearance(parsed, .55, str(path))
+            assert not result['complete'], result
+            assert any('unequal-axis circle' in row['reason'] for row in result['unmeasured'])
+        print('PASS: near-cardinal exact tilt and unequal-axis circle coverage')
     assert hashlib.sha256(source.read_bytes()).hexdigest() == original
 
 

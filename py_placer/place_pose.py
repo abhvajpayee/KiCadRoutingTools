@@ -385,7 +385,10 @@ def main(argv=None):
         # text is reprinted verbatim by the --force path on a run that WROTE,
         # so a "refused rather than written" inside it contradicted the
         # outcome in its own last clause.
-        print("place_pose REFUSED, nothing written: %s" % exc.reason,
+        output_state = (exc.extra.get('summary') or {}).get('output_state')
+        print("place_pose REFUSED, %s: %s" % (
+            'output partially changed' if output_state == 'partial' else 'nothing written',
+            exc.reason),
               file=sys.stderr)
         # EVERY exit carries a summary, including the refusals raised before
         # one was built (an unknown ref, a locked part, a face with no pads):
