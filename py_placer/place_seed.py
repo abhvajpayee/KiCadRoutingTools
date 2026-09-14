@@ -622,6 +622,7 @@ Examples:
             from placement.legality import grade_pad_legality
             pcb_out = parse_kicad_pcb(args.output_file)
             pads_after = grade_pad_legality(pcb_out, args.clearance,
+                                            edge_margin=args.board_edge_clearance,
                                             pcb_file=args.output_file)
             graded = floorplan.grade(intent, pcb_out, args.output_file,
                                      group_sources=sources,
@@ -641,6 +642,7 @@ Examples:
                       f"{_req_cl(pads_after)}")
             summary['hole_conflicts_after'] = pads_after['hole_conflicts']
             summary['oob_pad_count_after'] = pads_after['oob_pad_count']
+            summary['pad_edge_after'] = pads_after['pad_edge']
             if own:
                 exit_rc = 4
         _stage.cleanup()
@@ -924,9 +926,12 @@ Examples:
     # seed's, one that was already there is not.
     from placement.legality import grade_pad_legality
     _pads_in = grade_pad_legality(pcb, args.clearance,
+                                  edge_margin=args.board_edge_clearance,
                                   pcb_file=args.input_file)
     _pads_out = grade_pad_legality(parse_kicad_pcb(args.output_file),
-                                   args.clearance, pcb_file=args.output_file,
+                                   args.clearance,
+                                   edge_margin=args.board_edge_clearance,
+                                   pcb_file=args.output_file,
                                    worst_n=0)
     # THE PARTS IT MOVED, not `placements`. That list carries every part the
     # seeder wrote, locked and out-of-scope ones included at the pose they
@@ -1005,6 +1010,8 @@ Examples:
                'hpwl': (round(after['hpwl'], 3)
                         if after.get('hpwl') is not None else None),
                'output': args.output_file}
+    summary['pad_edge_before'] = _pads_in['pad_edge']
+    summary['pad_edge_after'] = _pads_out['pad_edge']
     print("JSON_SUMMARY: " + json.dumps(summary, sort_keys=True))
     _reason = gate_reason(result['unseated'], own, _my_pads, _hole_delta)
     if _reason is not None:

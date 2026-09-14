@@ -64,7 +64,8 @@ FACE_ALIASES = {'n': 'north', 'north': 'north',
 
 #: The legality categories a request may not WORSEN. Board-level counts from
 #: `grade_pad_legality`.
-LEGALITY_KEYS = ('pad_conflicts', 'hole_conflicts', 'oob_pad_count')
+LEGALITY_KEYS = ('pad_conflicts', 'hole_conflicts', 'oob_pad_count',
+                 'pad_edge_conflicts', 'pad_edge_unmeasured')
 
 #: The MAGNITUDES, and they are not a nicety: a count arm alone accepts a
 #: request that keeps the tally and deepens the damage. Measured on the
@@ -74,7 +75,7 @@ LEGALITY_KEYS = ('pad_conflicts', 'hole_conflicts', 'oob_pad_count')
 #: the same mechanism at 2.008 -> 101.008 mm.) CLAUDE.md calls copper outside
 #: the
 #: outline the top-priority placement defect, so its AMOUNT is an arm too.
-MAGNITUDE_KEYS = ('pad_shortfall', 'oob_pad_amount')
+MAGNITUDE_KEYS = ('pad_shortfall', 'oob_pad_amount', 'pad_edge_shortfall')
 MAGNITUDE_EPS = 1e-6
 
 
@@ -355,7 +356,8 @@ def resolve_ops(pcb_data, ops: Sequence[Dict], *, clearance: float,
 # legality
 # ---------------------------------------------------------------------------
 
-def grade(pcb_data, board_path: str, clearance: float) -> Dict:
+def grade(pcb_data, board_path: str, clearance: float,
+          board_edge_clearance=None) -> Dict:
     """`grade_pad_legality` at this board's own poses -- never a re-derivation.
 
     `pcb_file` is passed so `PadClearanceModel` can read the netclasses, the
@@ -364,7 +366,8 @@ def grade(pcb_data, board_path: str, clearance: float) -> Dict:
     would, and one that declares them is graded the way check_drc will.
     """
     from placement.legality import grade_pad_legality
-    return grade_pad_legality(pcb_data, clearance, pcb_file=board_path)
+    return grade_pad_legality(pcb_data, clearance, pcb_file=board_path,
+                              edge_margin=board_edge_clearance)
 
 
 def worsened(before: Dict, after: Dict) -> List[str]:
@@ -378,7 +381,8 @@ def worsened(before: Dict, after: Dict) -> List[str]:
 
 def is_clean(report: Dict) -> bool:
     """Is this board legal in the ABSOLUTE sense, not merely no worse?"""
-    return not (any(report.get(k) for k in LEGALITY_KEYS)
+    return not (report.get('pad_edge', {}).get('complete') is False
+                or any(report.get(k) for k in LEGALITY_KEYS)
                 or any((report.get(k) or 0.0) > MAGNITUDE_EPS
                        for k in MAGNITUDE_KEYS))
 
@@ -390,6 +394,12 @@ def _legality_row(before: Dict, after: Dict) -> Dict:
         row[key + '_after'] = after.get(key)
     row['pad_clearance_required'] = after.get('required')
     row['worst'] = after.get('worst')
+    row['pad_edge_before'] = before.get('pad_edge')
+    row['pad_edge_after'] = after.get('pad_edge')
+    row['oob_pad_copper_count_before'] = before.get('oob_pad_copper_count')
+    row['oob_pad_copper_count_after'] = after.get('oob_pad_copper_count')
+    row['oob_pad_copper_refs_after'] = after.get('oob_pad_copper_refs')
+    row['oob_pad_basis'] = after.get('oob_pad_basis')
     return row
 
 
@@ -577,8 +587,11 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
     if not dry_run and not out_path:
         raise PoseRefusal("a write needs an output path; pass one, or "
                           "--dry-run to grade without writing", code=2)
+    requested = {'clearance': clearance, 'board_edge_clearance': board_edge_clearance}
     clearance, board_edge_clearance, track_width, knobs = resolve_knobs(
         board_path, clearance, board_edge_clearance, track_width)
+    for key, value in requested.items():
+        knobs[key].update(requested=value, units='mm')
     pcb = pcb_data if pcb_data is not None else parse_kicad_pcb(board_path)
 
     placements, notes = resolve_ops(pcb, ops, clearance=clearance,
@@ -634,7 +647,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
         'would_write': out_path,
     }
 
-    before = grade(pcb, board_path, clearance)
+    before = grade(pcb, board_path, clearance, board_edge_clearance)
     stage = tempfile.TemporaryDirectory(prefix='place_pose_')
     try:
         cand = os.path.join(stage.name, 'candidate.kicad_pcb')
@@ -644,7 +657,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
             shutil.copyfile(board_path, cand)
         copy_siblings(board_path, cand)
         cand_pcb = parse_kicad_pcb(cand)
-        after = grade(cand_pcb, cand, clearance)
+        after = grade(cand_pcb, cand, clearance, board_edge_clearance)
         bad = worsened(before, after)
 
         if snap and len(placements) != 1:
@@ -689,7 +702,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
                 write_placed_output(board_path, cand, trial)
                 copy_siblings(board_path, cand)
                 pcb_c = parse_kicad_pcb(cand)
-                g = grade(pcb_c, cand, clearance)
+                g = grade(pcb_c, cand, clearance, board_edge_clearance)
                 return trial, pcb_c, g, worsened(before, g)
 
             # TWO PHASES, each with its OWN budget, and the reason is the
@@ -763,7 +776,7 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
                 write_placed_output(board_path, cand, placements)
                 copy_siblings(board_path, cand)
                 cand_pcb = parse_kicad_pcb(cand)
-                after = grade(cand_pcb, cand, clearance)
+                after = grade(cand_pcb, cand, clearance, board_edge_clearance)
                 bad = worsened(before, after)
 
         # A `face` op's rotation is PREDICTED (FACE_CYCLE) and then MEASURED on
@@ -815,6 +828,9 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
                 face_miss.append(n)
 
         summary.update(_legality_row(before, after))
+        for channel in ('pad_edge_before', 'pad_edge_after'):
+            summary[channel]['source'] = knobs['board_edge_clearance']['source']
+            summary[channel]['requested_mm'] = requested['board_edge_clearance']
         # TWO keys, because one word cannot carry both facts and the wrong one
         # was being published: `legal` used to mean "no worse than the input",
         # so a board still carrying a pad conflict reported `legal: true`.
@@ -823,8 +839,9 @@ def apply_poses(board_path: str, out_path: Optional[str], ops: Sequence[Dict],
         summary['no_worse'] = not bad
         summary['legal'] = is_clean(after)
         summary['legal_basis'] = (
-            'legal = the board is clean at this pose; no_worse = the verdict '
-            'this verb refuses on (relative to the input board)')
+            'legal = measured pad/hole/outline channels are clean and edge '
+            'coverage is complete; no_worse = no measured category worsened '
+            'relative to the input board. Neither verifies bodies, routing or fill.')
 
         if face_miss:
             reason = '; '.join(
