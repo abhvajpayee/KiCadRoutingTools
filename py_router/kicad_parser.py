@@ -235,6 +235,9 @@ class Pad:
     # the castellated-landing retract post-pass pulls track endpoints that
     # land in the edge-clearance zone of such a pad back to its inner reach.
     # Set by BOTH parse paths (text + pcbnew).
+    geometry_approximations: Tuple[str, ...] = ()  # Shape variants flattened by
+    # this parser. Consumers claiming exact primitive geometry must disclose
+    # these instead of certifying the simplified shape/size as native copper.
 
 
 _VIA_BIRTH_WATCH = None
@@ -3479,7 +3482,11 @@ def extract_footprints_and_pads(content: str, nets: Dict[int, Net],
                 polygons=pad_polygons,
                 hole_x=pad_hole_x,
                 hole_y=pad_hole_y,
-                castellated='pad_prop_castellated' in pad_text
+                castellated='pad_prop_castellated' in pad_text,
+                geometry_approximations=tuple(reason for token, reason in (
+                    ('chamfer', 'chamfered pad'),
+                    ('padstack', 'per-layer padstack'))
+                    if re.search(r'\(' + token + r'\s', pad_text))
             )
 
             footprint.pads.append(pad)
@@ -5481,6 +5488,21 @@ def build_pcb_data_from_board(board, guide_layer: str = "User.1",
             except Exception:
                 pad_castellated = False
 
+            geometry_approximations = []
+            try:
+                if pad.GetChamferPositions():
+                    geometry_approximations.append('chamfered pad')
+            except AttributeError:
+                pass  # Older KiCad versions without chamfered pads.
+            except Exception:
+                geometry_approximations.append('chamfer geometry unavailable')
+            if hasattr(pad, 'Padstack'):
+                try:
+                    if pad.Padstack().Mode() != pcbnew.PADSTACK.MODE_NORMAL:
+                        geometry_approximations.append('per-layer padstack')
+                except Exception:
+                    geometry_approximations.append('padstack geometry unavailable')
+
             pad_obj = Pad(
                 component_ref=reference,
                 pad_number=pad_num,
@@ -5507,7 +5529,8 @@ def build_pcb_data_from_board(board, guide_layer: str = "User.1",
                 polygons=pad_polygons,
                 hole_x=pcb_hole_x,
                 hole_y=pcb_hole_y,
-                castellated=pad_castellated
+                castellated=pad_castellated,
+                geometry_approximations=tuple(geometry_approximations)
             )
 
             footprint.pads.append(pad_obj)

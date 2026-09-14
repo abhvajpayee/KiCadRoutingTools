@@ -3462,6 +3462,7 @@ def repair_placement(pcb_data, pcb_file: str, intent, *,
     # bounded one repair pass at 10 pair-movers on a 20-pair board -- the
     # summary said 20 conflicts while only 10 got charged.
     pads = _leg.grade_pad_legality(pcb_data, clearance, worst_n=0,
+                                   edge_margin=board_edge_clearance,
                                    pcb_file=pcb_file)
     print(f"  Repair census: {pads['pad_conflicts']} conflict pair(s), "
           f"all listed")

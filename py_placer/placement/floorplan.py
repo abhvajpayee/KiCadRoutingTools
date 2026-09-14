@@ -4544,7 +4544,9 @@ def emit_intent(pcb_data, pcb_file: str, *,
     if state.legality_ctx is not None:
         from . import legality as _leg
         try:
-            g = _leg.grade_pad_legality(pcb_data, state.clearance, worst_n=0)
+            g = _leg.grade_pad_legality(pcb_data, state.clearance, worst_n=0,
+                                        edge_margin=state.edge_gate.margin,
+                                        pcb_file=pcb_file)
             for (ra, rb, _mm) in g.get('worst', ()):
                 suspect_pairs.add(ra)
                 suspect_pairs.add(rb)

@@ -88,13 +88,13 @@ ROWS = [
      (T_POSE,), 'KILLED'),
 
     ('off-board-amount-stops-being-an-arm', 'o',
-     "MAGNITUDE_KEYS = ('pad_shortfall', 'oob_pad_amount')",
-     "MAGNITUDE_KEYS = ('pad_shortfall',)",
+     "MAGNITUDE_KEYS = ('pad_shortfall', 'oob_pad_amount', 'pad_edge_shortfall')",
+     "MAGNITUDE_KEYS = ('pad_shortfall', 'pad_edge_shortfall')",
      (T_POSE,), 'KILLED'),
 
     ('is_clean-ignores-the-magnitudes', 'o',
-     "    return not (any(report.get(k) for k in LEGALITY_KEYS)",
-     "    return True or not (any(report.get(k) for k in LEGALITY_KEYS)",
+     "    return not (report.get('pad_edge', {}).get('complete') is False",
+     "    return True or not (report.get('pad_edge', {}).get('complete') is False",
      (T_POSE,), 'KILLED'),
 
     ('legal-goes-back-to-meaning-no_worse', 'o',
