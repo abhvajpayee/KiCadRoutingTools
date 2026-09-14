@@ -1,5 +1,10 @@
 # Fresh verification of the placement edge slice of #964 / #967
 
+The subsequent [three-reviewer bug audit](three-reviewers/README.md) supersedes
+the production revision below. It records additional reproduced failures,
+their fixes, and independent verification of candidate `ad156f2a`. The original
+reproduction and first final-verifier evidence below remain historical records.
+
 This updates existing PR #968, based on current upstream main
 `5a7fbcb6ee4deebd1d9ec1d5bd094d8681f502f3`. It is a bounded slice: **Refs #964,
 Refs #967**, with no automatic closure. No placement strategy or skill changed.

@@ -1,0 +1,107 @@
+{
+  "revision": "ad156f2a2cc1b6f58eafc25abfeb0a6c31a811d4",
+  "production_trees": [
+    "d27c92cc0ba7f25babde20df7a67c12c89b72655",
+    "c1f94185bbe16eced655a6bb047768549031fdb0",
+    "9ebc308a766723da5d136843e0affbfdeb59dce4"
+  ],
+  "source_sha256": "165302e6a4f7aacdd64b3174df27ed8ddb19fd5f1f7effadd8d92205e25a120e",
+  "written_board_identities": [
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-0.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-0-out.kicad_pcb",
+      "input_sha256": "508dd172e464dcd95bce637e7d0bb16756f9605b1279213680a1ebacbb3dac2f",
+      "output_sha256": "d3693fed8268a9a975fd73306313d1cad382770553c98e00153a20e817b930b5",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-0.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-0.5-ordinary.kicad_pcb",
+      "input_sha256": "5179b4b60d70168da240ae453ff7164459f91435ce0f824e763a45d4c0a71d25",
+      "output_sha256": "42ae1e0283a2be2375f087e8f6db820d2dfb5f2061da1811b073033a0036a2a7",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-1.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-1-ordinary.kicad_pcb",
+      "input_sha256": "69c85dd9475ebbad328220fc25f7faf93b79c476dd313537dd13f7604c0aaf4d",
+      "output_sha256": "a84a654b481482ceb1f35df5b47b90ae45c1e93ab7b9fbc4cd56784fc46dd5c0",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-1.0001.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-1.0001-ordinary.kicad_pcb",
+      "input_sha256": "b5ae6d3d83a6747c22f21c181cff36b4d52bd8c4feeb4efd46ebea1d89beb46a",
+      "output_sha256": "22cd97fb9a76b021c945a783e13e22a922cf47d8cf26686056e899b119a25328",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-89.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-89.5-ordinary.kicad_pcb",
+      "input_sha256": "cb05ba4fca6036c1bfdd94d93e35a7ecf885648554291cd6aa50613009d0c0cf",
+      "output_sha256": "00af7881c1b73205d0243d6d6465697761e8af436a4e806be7e5072368ee5fab",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-90.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-90-out.kicad_pcb",
+      "input_sha256": "dbaf7de95677a9ddb40e783825961d3fff79f32fa8249c4425d634fb61c52705",
+      "output_sha256": "3f6e5ceb9f47610b84660d127148face94c14e98966206ca60ce4d51839da5e0",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-90.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-90.5-ordinary.kicad_pcb",
+      "input_sha256": "aaa4a6b082131b435ed1e7222f94f744c4375b841addbc5fcadb8868e6839e15",
+      "output_sha256": "3c620b48d7e31eef1f60243343f980cef53b1df5324943059062ea909487eb44",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-179.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-179.5-ordinary.kicad_pcb",
+      "input_sha256": "99cbab67d8c0284ae383746ac14768fa0aa0e2d6f8381cc239a761c1ba741cf1",
+      "output_sha256": "6b2e305210cc91b141c01f12221b4ca27264c3b26e01be973720c3401e8e8eaa",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-180.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-180.5-ordinary.kicad_pcb",
+      "input_sha256": "58aa2ea630454b6a0256e1921444c312c79c88c49bf368b89838d67a952bd884",
+      "output_sha256": "727633a6b8d668eb48d6d7cc769be66808a5bf6cb3e7e7e1f40cc5f902d601bc",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-359.5.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\angle-359.5-ordinary.kicad_pcb",
+      "input_sha256": "730dc49a85356ac976c076b97aa701d9650cf50d0168641bed6b6852108a8d8c",
+      "output_sha256": "5a4264acd668995e21b85cc8c449c7ab85a396afa3a0691c67fdea6bd26f5afb",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\extra-oval.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\extra-oval-out.kicad_pcb",
+      "input_sha256": "5ee0cd4e6b6632be78191223a2ba3c51fb4bd66a97ec5c469ce210f8ef57f4c9",
+      "output_sha256": "879f4679208ac48392ecf9583bc624cf8cb68c59c02fb1d4e484b8f60938d2d3",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    },
+    {
+      "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\extra-roundrect.kicad_pcb",
+      "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-geometry\\review-geometry-evidence-final\\extra-roundrect-out.kicad_pcb",
+      "input_sha256": "c29c116e6792a735c27a8a9aa284cb9ca5d15799c06bf9599b9503ab2632ba8f",
+      "output_sha256": "3e7d7433698c94a38dd97941a4f5ba4cc1ee6cefe42177c58cbeee7211c1fc06",
+      "native_all_footprint_pad_mechanics_equal": true,
+      "only_equivalent_Y1_at_serialization_changed": true
+    }
+  ]
+}

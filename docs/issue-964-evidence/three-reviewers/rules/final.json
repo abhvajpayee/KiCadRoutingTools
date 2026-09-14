@@ -1,0 +1,2658 @@
+{
+  "revision": "ad156f2a2cc1b6f58eafc25abfeb0a6c31a811d4",
+  "fixture_sha": "165302e6a4f7aacdd64b3174df27ed8ddb19fd5f1f7effadd8d92205e25a120e",
+  "rows": [
+    {
+      "name": "bad55",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad55\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad55\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad55\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": -1.375,
+            "facing": 0.0,
+            "halo": 1.481,
+            "hpwl": -0.5,
+            "inversions": 0,
+            "length": -0.4162,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 11.4476,
+            "facing": 0.0,
+            "halo": 98.4349,
+            "hpwl": 232.9564,
+            "inversions": 2,
+            "length": 218.9059,
+            "orient": 0.0
+          },
+          "cost": 1375.5543,
+          "delta": -0.0189,
+          "dist_mm": 0.25,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 102.95
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [
+            270.0
+          ],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.2,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.2,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 2,
+        "pad_edge_conflicts_before": 2,
+        "pad_edge_shortfall_after": 0.10000000000000009,
+        "pad_edge_shortfall_before": 0.10000000000000009,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose (pad_edge_conflicts 2) The pose ranker's nearest candidate for this part is x=124.7 y=102.95 rot=270 (0.250 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad55\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "bad50",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad50\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad50\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".50",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 0,
+      "written": true,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.5,
+        "clearance": 0.25,
+        "dry_run": false,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad50\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.5,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.5
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": true,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": null,
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.2,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.2,
+              270.0
+            ]
+          }
+        ],
+        "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad50\\output.kicad_pcb",
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.5,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": 0.5,
+          "required_mm": 0.5,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.5,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": 0.5,
+          "required_mm": 0.5,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": null,
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\bad50\\output.kicad_pcb"
+      },
+      "native_y1_max_copper_y_mm": 105.0,
+      "native_gap_mm": 0.5,
+      "siblings_preserved": true,
+      "fixed_17_blocks_preserved": true
+    },
+    {
+      "name": "zero",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\zero\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\zero\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        "0",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 0,
+      "written": true,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.0,
+        "clearance": 0.25,
+        "dry_run": false,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\zero\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.0,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.0
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": true,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": null,
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\zero\\output.kicad_pcb",
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.0,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.0,
+          "required_mm": 0.0,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.0,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.0,
+          "required_mm": 0.0,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": null,
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\zero\\output.kicad_pcb"
+      },
+      "native_y1_max_copper_y_mm": 104.9,
+      "native_gap_mm": 0.5999999999999943,
+      "siblings_preserved": true,
+      "fixed_17_blocks_preserved": true
+    },
+    {
+      "name": "nan",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\nan\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\nan\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        "nan",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 2,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "dry_run": false,
+        "exit_code": 2,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\nan\\input.kicad_pcb",
+        "legal": null,
+        "moved": [],
+        "ops": [],
+        "output": null,
+        "refused": "board-edge-clearance must be finite and nonnegative (mm); got nan"
+      }
+    },
+    {
+      "name": "inf",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\inf\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\inf\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        "inf",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 2,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "dry_run": false,
+        "exit_code": 2,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\inf\\input.kicad_pcb",
+        "legal": null,
+        "moved": [],
+        "ops": [],
+        "output": null,
+        "refused": "board-edge-clearance must be finite and nonnegative (mm); got inf"
+      }
+    },
+    {
+      "name": "negative",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\negative\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\negative\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        "-1",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 2,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "dry_run": false,
+        "exit_code": 2,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\negative\\input.kicad_pcb",
+        "legal": null,
+        "moved": [],
+        "ops": [],
+        "output": null,
+        "refused": "board-edge-clearance must be finite and nonnegative (mm); got -1.0"
+      }
+    },
+    {
+      "name": "project_nan",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_nan\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_nan\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_nan\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": null,
+            "source": "fixed default",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": -1.375,
+            "facing": 0.0,
+            "halo": 1.481,
+            "hpwl": -0.5,
+            "inversions": 0,
+            "length": -0.4162,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 11.4476,
+            "facing": 0.0,
+            "halo": 98.4349,
+            "hpwl": 232.9564,
+            "inversions": 2,
+            "length": 218.9059,
+            "orient": 0.0
+          },
+          "cost": 1375.5543,
+          "delta": -0.0189,
+          "dist_mm": 0.25,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 102.95
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [
+            270.0
+          ],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.2,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.2,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": null,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "min_copper_edge_clearance",
+              "declared": "nan",
+              "reason": "project edge clearance must be finite and nonnegative",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_fz3mxvg1\\candidate.kicad_pro"
+            }
+          ],
+          "source": "fixed default",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": null,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "min_copper_edge_clearance",
+              "declared": "nan",
+              "reason": "project edge clearance must be finite and nonnegative",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_nan\\input.kicad_pro"
+            }
+          ],
+          "source": "fixed default",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 2,
+        "pad_edge_conflicts_before": 2,
+        "pad_edge_shortfall_after": 0.10000000000000009,
+        "pad_edge_shortfall_before": 0.10000000000000009,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose (pad_edge_conflicts 2) The pose ranker's nearest candidate for this part is x=124.7 y=102.95 rot=270 (0.250 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_nan\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "project_inf",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_inf\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_inf\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 2,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "dry_run": false,
+        "exit_code": 2,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_inf\\input.kicad_pcb",
+        "legal": null,
+        "moved": [],
+        "ops": [],
+        "output": null,
+        "refused": "board-edge-clearance must be finite and nonnegative (mm); got inf"
+      }
+    },
+    {
+      "name": "project_negative",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_negative\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_negative\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "509e1f95e7c492410eb913d6ceb4e3458d52a74b135392ae37b4c2ecea3a8325",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_negative\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": null,
+            "source": "fixed default",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": -1.375,
+            "facing": 0.0,
+            "halo": 1.481,
+            "hpwl": -0.5,
+            "inversions": 0,
+            "length": -0.4162,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 11.4476,
+            "facing": 0.0,
+            "halo": 98.4349,
+            "hpwl": 232.9564,
+            "inversions": 2,
+            "length": 218.9059,
+            "orient": 0.0
+          },
+          "cost": 1375.5543,
+          "delta": -0.0189,
+          "dist_mm": 0.25,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 102.95
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [
+            270.0
+          ],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.2,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.2,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": null,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "min_copper_edge_clearance",
+              "declared": "-1",
+              "reason": "project edge clearance must be finite and nonnegative",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_njhwpk3r\\candidate.kicad_pro"
+            }
+          ],
+          "source": "fixed default",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 1,
+              "pad_loc": [
+                125.5,
+                104.3
+              ],
+              "pad_ref": "Y1.2",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            },
+            {
+              "edge": "top",
+              "gap_mm": 0.5,
+              "pad_index": 3,
+              "pad_loc": [
+                123.9,
+                104.3
+              ],
+              "pad_ref": "Y1.3",
+              "required_mm": 0.55,
+              "shortfall_mm": 0.050000000000000044
+            }
+          ],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5,
+          "requested_mm": null,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "min_copper_edge_clearance",
+              "declared": "-1",
+              "reason": "project edge clearance must be finite and nonnegative",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_negative\\input.kicad_pro"
+            }
+          ],
+          "source": "fixed default",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 2,
+        "pad_edge_conflicts_before": 2,
+        "pad_edge_shortfall_after": 0.10000000000000009,
+        "pad_edge_shortfall_before": 0.10000000000000009,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose (pad_edge_conflicts 2) The pose ranker's nearest candidate for this part is x=124.7 y=102.95 rot=270 (0.250 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\project_negative\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "valid_edge",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\valid_edge\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\valid_edge\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\valid_edge\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "edge_clearance",
+              "declared": {
+                "min": 0.75
+              },
+              "reason": "custom edge rule not evaluated by scalar edge check",
+              "rule": "edge floor",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_f0mkhsyv\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "edge_clearance",
+              "declared": {
+                "min": 0.75
+              },
+              "reason": "custom edge rule not evaluated by scalar edge check",
+              "rule": "edge floor",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\valid_edge\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\valid_edge\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "truncated_edge",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\truncated_edge\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\truncated_edge\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\truncated_edge\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unclosed parenthesis in custom rules",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_o9sg0z05\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unclosed parenthesis in custom rules",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\truncated_edge\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\truncated_edge\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "extra_close_edge",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\extra_close_edge\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\extra_close_edge\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\extra_close_edge\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unmatched closing parenthesis in custom rules",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_u5gj7le0\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unmatched closing parenthesis in custom rules",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\extra_close_edge\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\extra_close_edge\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "copper_only",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_only\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_only\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 0,
+      "written": true,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_only\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": true,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": null,
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_only\\output.kicad_pcb",
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": null,
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_only\\output.kicad_pcb"
+      },
+      "native_y1_max_copper_y_mm": 104.9,
+      "native_gap_mm": 0.5999999999999943,
+      "siblings_preserved": true,
+      "fixed_17_blocks_preserved": true
+    },
+    {
+      "name": "conditional_edge",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\conditional_edge\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\conditional_edge\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\conditional_edge\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "edge_clearance",
+              "declared": {
+                "min": 0.75
+              },
+              "reason": "custom edge rule not evaluated by scalar edge check",
+              "rule": "edge condition",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_ro2wjn2d\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "constraint": "edge_clearance",
+              "declared": {
+                "min": 0.75
+              },
+              "reason": "custom edge rule not evaluated by scalar edge check",
+              "rule": "edge condition",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\conditional_edge\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\conditional_edge\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "copper_comments",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_comments\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_comments\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 0,
+      "written": true,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_comments\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": true,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": null,
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_comments\\output.kicad_pcb",
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": true,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": null,
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\copper_comments\\output.kicad_pcb"
+      },
+      "native_y1_max_copper_y_mm": 104.9,
+      "native_gap_mm": 0.5999999999999943,
+      "siblings_preserved": true,
+      "fixed_17_blocks_preserved": true
+    },
+    {
+      "name": "unclosed_quote",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\unclosed_quote\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\unclosed_quote\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\unclosed_quote\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unterminated quoted string in custom rules",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_y93ojbmz\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unterminated quoted string in custom rules",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\unclosed_quote\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\unclosed_quote\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "wrapped_edge",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\wrapped_edge\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\wrapped_edge\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\wrapped_edge\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unsupported top-level form in custom rules",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_p8_53bhi\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unsupported top-level form in custom rules",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\wrapped_edge\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\wrapped_edge\\output.kicad_pcb"
+      }
+    },
+    {
+      "name": "parenthesis_rule",
+      "argv": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\py_placer\\place_pose.py",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\parenthesis_rule\\input.kicad_pcb",
+        "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\parenthesis_rule\\output.kicad_pcb",
+        "--clearance",
+        ".25",
+        "--board-edge-clearance",
+        ".55",
+        "--strict-legal",
+        "rotate",
+        "Y1",
+        "0",
+        "--relative"
+      ],
+      "exit": 4,
+      "written": false,
+      "input_sha": "026b6f3bd52bfe48fa4d8f776242d017d3166d922514b14bb9b461c77d111e0c",
+      "input_preserved": true,
+      "summary": {
+        "board_edge_clearance": 0.55,
+        "clearance": 0.25,
+        "dry_run": false,
+        "exit_code": 4,
+        "forced": false,
+        "hole_conflicts_after": 0,
+        "hole_conflicts_before": 0,
+        "input": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\parenthesis_rule\\input.kicad_pcb",
+        "knobs": {
+          "board_edge_clearance": {
+            "requested": 0.55,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.55
+          },
+          "clearance": {
+            "requested": 0.25,
+            "source": "cli",
+            "units": "mm",
+            "value": 0.25
+          }
+        },
+        "legal": false,
+        "legal_basis": "legal = measured pad/hole/outline channels are clean and edge coverage is complete; no_worse = no measured category worsened relative to the input board. Neither verifies bodies, routing or fill.",
+        "locked": [],
+        "locked_count": null,
+        "moved": [],
+        "nearest_legal": {
+          "component_delta": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 0,
+            "edge": 0.0,
+            "facing": 0.0,
+            "halo": 0.0,
+            "hpwl": 0.0,
+            "inversions": 0,
+            "length": 0.0,
+            "orient": 0.0
+          },
+          "components": {
+            "align": 0.0,
+            "corridor_cut": 0.0,
+            "crossings": 40,
+            "edge": 12.2426,
+            "facing": 0.0,
+            "halo": 97.5163,
+            "hpwl": 233.2564,
+            "inversions": 2,
+            "length": 219.1419,
+            "orient": 0.0
+          },
+          "cost": 1375.5015,
+          "delta": 0.0,
+          "dist_mm": 0.0,
+          "legal": true,
+          "rot": 270.0,
+          "x": 124.7,
+          "y": 103.1
+        },
+        "nearest_legal_basis": "pose_score.rank_poses / QuenchState.candidate_valid -- an AABB gate, NOT re-graded: a suggestion to try, not a pose this verb has verified",
+        "nearest_legal_census": {
+          "dropped_in_place": [],
+          "dropped_total": 286,
+          "ranked": 3,
+          "rotations": [
+            270.0
+          ],
+          "stopped_early": false,
+          "sweep_radius_mm": 2.0
+        },
+        "no_worse": true,
+        "oob_pad_amount_after": 0.0,
+        "oob_pad_amount_before": 0.0,
+        "oob_pad_basis": "part pad AABB vs outline inflated by the grading clearance (NOT the per-pad outline measure; see render_placement checklist.a_off_outline.pad_copper)",
+        "oob_pad_copper_count_after": 0,
+        "oob_pad_copper_count_before": 0,
+        "oob_pad_copper_refs_after": [],
+        "oob_pad_count_after": 0,
+        "oob_pad_count_before": 0,
+        "ops": [
+          {
+            "from": [
+              124.7,
+              103.1,
+              270.0
+            ],
+            "kind": "rotate",
+            "moved": false,
+            "ref": "Y1",
+            "to": [
+              124.7,
+              103.1,
+              270.0
+            ]
+          }
+        ],
+        "output": null,
+        "pad_clearance_required": [],
+        "pad_conflicts_after": 0,
+        "pad_conflicts_before": 0,
+        "pad_edge_after": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unsupported top-level form in custom rules",
+              "source": "C:\\Users\\rob\\AppData\\Local\\Temp\\place_pose_ppnxlh5a\\candidate.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_before": {
+          "argument_mm": 0.55,
+          "basis": "analytic pad copper extrema (custom pads: parsed polygons) vs rectangular Edge.Cuts centreline; other outlines sampled, not certified; no body/track/via/fill check",
+          "complete": false,
+          "findings": [],
+          "measured_pads": 75,
+          "minimum_gap_mm": 0.5999999999999943,
+          "requested_mm": 0.55,
+          "required_mm": 0.55,
+          "rules_unmeasured": [
+            {
+              "reason": "custom rules unreadable: unsupported top-level form in custom rules",
+              "source": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\parenthesis_rule\\input.kicad_dru"
+            }
+          ],
+          "source": "cli",
+          "tolerance_mm": 1e-06,
+          "units": "mm",
+          "unmeasured": []
+        },
+        "pad_edge_conflicts_after": 0,
+        "pad_edge_conflicts_before": 0,
+        "pad_edge_shortfall_after": 0,
+        "pad_edge_shortfall_before": 0,
+        "pad_edge_unmeasured_after": 0,
+        "pad_edge_unmeasured_before": 0,
+        "pad_shortfall_after": 0.0,
+        "pad_shortfall_before": 0.0,
+        "refused": "--strict-legal was asked for and the board is not clean at this pose () The pose ranker's nearest candidate for this part is x=124.7 y=103.1 rot=270 (0.000 mm away), but --strict-legal is a condition on the WHOLE board, so that pose need not satisfy it.",
+        "snapped": null,
+        "track_width": 0.3,
+        "unlocked": [],
+        "unlocked_count": null,
+        "worst": [],
+        "would_write": "C:\\Users\\rob\\Documents\\prive\\git\\KRT-968-review-rules\\review-rules-final-ad156f2a\\parenthesis_rule\\output.kicad_pcb"
+      }
+    }
+  ]
+}
