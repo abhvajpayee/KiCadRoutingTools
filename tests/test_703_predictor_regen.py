@@ -65,6 +65,40 @@ sys.path.insert(0, os.path.join(ROOT, 'tests', 'stress'))
 #:
 #: MEASURED, from the run recorded in the pull request. Never predicted.
 #:
+#: RE-RECORDED 2026-09-14 (#958, the smoother's second phase). `truth.quality`
+#: moved on all four rows, and in ONE column: `segments` fell everywhere while
+#: `vias` is identical on all four and `copper_mm` is identical on three. That
+#: signature is a re-SEGMENTATION, not a different route, and it was BISECTED
+#: rather than assumed -- `git bisect run` over the 146 commits since the last
+#: re-record lands on `2fe97a30` ("#958: the smoother prefers fewer segments at
+#: equal length, in a second greedy phase"), whose own commit message records
+#: the same fingerprint on splitflap's signal step (1149 -> 968 segments, 96
+#: vias in both, copper 2477.79 -> 2477.10 mm).
+#:
+#:   esp_prog:authored            segs 286 -> 254   (vias 34, copper 344.06 both)
+#:   esp_prog:perturb-scatter-d1  segs 311 -> 292   (vias 37, copper 363.0 both)
+#:   esp_prog:portfolio-1         segs 304 -> 269   (vias 30, copper 350.67 both)
+#:   splitflap_driver:authored    segs 1422 -> 1155, copper 2915.15 -> 2913.82
+#:
+#: splitflap is the only row whose copper moved, by -1.33 mm (-0.05%), and that
+#: is the SAME second-order effect the 2026-08-30 note below already records for
+#: the collinear merge: re-segmentation changes rip/restore granularity for the
+#: later steps of a multi-step chain, so end-to-end copper shifts a hair. The
+#: three esp_prog rows are single-step and their copper is unmoved to the
+#: hundredth, which is what makes that reading the one to believe.
+#:
+#: `truth.blocking` is 0 on all four, before and after -- no net became unrouted
+#: or broken. FEWER segments at equal copper and equal vias is an improvement on
+#: this repo's own tie-break, so this re-record is not papering over a loss.
+#:
+#: A NOTE ON BISECTING THIS FILE. The first attempt used a shell predicate
+#: grepping the mismatch line for the recorded segment count -- but that line is
+#: `got != want`, so the pattern matched the WANT side and every commit read as
+#: good, converging on HEAD (an unrelated one-line project-writeback commit).
+#: A predicate for this test must parse the left of `!=`, and must exit 125 on a
+#: checkout that produced no comparison line at all, or an untestable commit is
+#: silently scored as a passing one.
+#:
 #: RE-RECORDED 2026-09-03 (#530 decision 3). `truth.quality` moved on the three
 #: esp_prog rows and the cause is named: a pad clearance OVERRIDE now REPLACES
 #: the class value (KiCad 10, measured by tests/oracle/constraint_agreement.py)
@@ -171,7 +205,8 @@ EXPECTED = {
         truth={'headline': 0,
                # 2026-09-03 (#530 auto/fab defaults): 33/345.52/373 -> 39/353.93/256
                # 2026-09-10 (#908 footprint copper): 39/353.93/256 -> 34/344.06/286
-               'quality': {'vias': 34, 'copper_mm': 344.06, 'segments': 286}},
+               # 2026-09-14 (#958 phase 2): segs 286 -> 254; vias/copper unmoved
+               'quality': {'vias': 34, 'copper_mm': 344.06, 'segments': 254}},
         predictors={
             'crossings': 53, 'hpwl': 253.98092000000003,
             'halo': 127.48707486477095, 'overlap_area': 1.1400451712000104,
@@ -186,7 +221,8 @@ EXPECTED = {
         truth={'headline': 0,
                # 2026-09-03 (auto/fab defaults): 29/341.07/288 -> 32/327.31/282
                # 2026-09-10 (#908 footprint copper): 32/327.31/282 -> 37/363.0/311
-               'quality': {'vias': 37, 'copper_mm': 363.0, 'segments': 311}},
+               # 2026-09-14 (#958 phase 2): segs 311 -> 292; vias/copper unmoved
+               'quality': {'vias': 37, 'copper_mm': 363.0, 'segments': 292}},
         predictors={
             'crossings': 50, 'hpwl': 252.34828000000005,
             'halo': 130.46454030971682, 'overlap_area': 1.1400451712000104,
@@ -240,7 +276,8 @@ EXPECTED = {
         truth={'headline': 1,
                # 2026-09-03 (auto/fab defaults): 32/347.03/270 -> 31/341.99/263
                # 2026-09-10 (#908 footprint copper): 31/341.99/263 -> 30/350.67/304
-               'quality': {'vias': 30, 'copper_mm': 350.67, 'segments': 304}},
+               # 2026-09-14 (#958 phase 2): segs 304 -> 269; vias/copper unmoved
+               'quality': {'vias': 30, 'copper_mm': 350.67, 'segments': 269}},
         predictors={
             'crossings': 23, 'hpwl': 260.0687799999999,
             'halo': 101.01900525631262, 'overlap_area': 1.0,
@@ -256,8 +293,11 @@ EXPECTED = {
         argv_sha='d32ea90c2e348bd6c1fb318983e73f953f179d1ea85aeca7ad4ed4b2bed5cbdc',
         seconds=32.6,
         truth={'headline': 0,
-               'quality': {'vias': 168, 'copper_mm': 2915.15,
-                           'segments': 1422}},
+               # 2026-09-14 (#958 phase 2): segs 1422 -> 1155, copper
+               # 2915.15 -> 2913.82 (-0.05%); vias unmoved. The only row whose
+               # copper moved -- see the re-record note in the header.
+               'quality': {'vias': 168, 'copper_mm': 2913.82,
+                           'segments': 1155}},
         predictors={
             'crossings': 300, 'hpwl': 2504.4400000000014,
             'halo': 297.4273114820511, 'overlap_area': 1.7621459846850488e-13,

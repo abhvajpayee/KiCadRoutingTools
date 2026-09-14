@@ -751,9 +751,10 @@ order:
    all for a decision — which edge a connector belongs on is declarable, but
    *where along it* and *which way the mating face points* are not, so the
    seeder takes the band's midpoint at the part's incoming angle, which on a
-   pile is a generator default. Measured on esp_prog: both free connectors
-   came out at rotation 0, and one of them put its declared band's midpoint
-   through a fixed socket's ground tab on every one of ten seeds.
+   pile is a generator default. Measured on a 21-part 2-layer board: both
+   free connectors came out at rotation 0, and one of them put its declared
+   band's midpoint through a fixed socket's ground tab on every one of ten
+   seeds.
 
    So **place and lock the decisions first** — the connectors, the
    mechanically-fixed parts, anything a spec pins (Step 0a-0 and the driver's

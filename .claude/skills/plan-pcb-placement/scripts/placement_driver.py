@@ -1176,9 +1176,9 @@ def _guard_zone_plan(a):
     # both decisions, and the seeder has neither. It takes the declared band's
     # midpoint (or an even distribution when no band is declared) and the
     # part's incoming angle, which on a pile is a generator default. Measured
-    # on esp_prog: both free connectors came out at rotation 0 with their
-    # mating faces pointing nowhere in particular, and one of them took the
-    # band midpoint straight through a fixed socket's ground tab.
+    # on a 21-part 2-layer board: both free connectors came out at rotation 0
+    # with their mating faces pointing nowhere in particular, and one of them
+    # took the band midpoint straight through a fixed socket's ground tab.
     #
     # So a declared edge connector is placed BY THE AUTHOR and locked, and the
     # seed fills in around it. `--waive seed-connectors:<reason>` is the way
@@ -1807,10 +1807,10 @@ def _guard_congestion(a):
 #: P1 45 -> 60 (run 27). The ladder's rung 2 became "decide, THEN seed the
 #: rest": a paragraph saying what the seeder is (a greedy first-fit with no
 #: representation for a decision) and a sub-rung for placing and locking the
-#: connectors and the mechanically-fixed parts before it runs. Measured on
-#: esp_prog: left to the seeder, both free connectors came out at rotation 0
-#: and one of them took its declared band's midpoint through a fixed socket's
-#: ground tab, on every one of ten seeds.
+#: connectors and the mechanically-fixed parts before it runs. Measured on a
+#: 21-part 2-layer board: left to the seeder, both free connectors came out at
+#: rotation 0 and one of them took its declared band's midpoint through a
+#: fixed socket's ground tab, on every one of ten seeds.
 #:
 #: P1 35 -> 45 and P0 75 -> 78 (run 26). P1 seeds FROM A ZONE PLAN now: its
 #: body gained the plan's coverage line, a ranked-seeds command in place of
