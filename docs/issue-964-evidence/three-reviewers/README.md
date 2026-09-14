@@ -33,8 +33,8 @@ from the primary regression run. All asserted outcomes passed on the corrected
 candidate. Before records are [geometry angles](geometry/before-angles.json),
 [geometry shapes](geometry/before-shapes.json), [rules](rules/before.json), and
 the combined operations evidence above. Reports retain the original local
-artifact names; this index maps them to the archived JSON. Each JSON includes
-the exact executed argv, summaries and fixture identities. Transient scripts,
+artifact names; this index maps them to the archived JSON. Command evidence
+records include exact executed argv, summaries and fixture identities. Transient scripts,
 raw logs and generated boards named in reports remain in the reviewer
 worktrees; the committed regression scripts reproduce the guarded behaviors.
 
