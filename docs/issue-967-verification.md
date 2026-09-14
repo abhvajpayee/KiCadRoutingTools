@@ -2,9 +2,10 @@
 
 This is the placement-legality slice of [#967](https://github.com/drandyhaas/KiCadRoutingTools/issues/967).
 It does not close the issue's broader independent-DRC rule-contract work.
-The [2026-09-14 follow-up](issue-964-evidence/README.md) records fresh independent
-reproduction, additional coverage defects found and corrected, and the final
-verified revision. The earlier measurements below remain pinned to their
+The 2026-09-14 follow-up recorded fresh independent reproduction, additional
+coverage defects found and corrected, and the final verified revision; its raw
+dumps are not carried in this repository -- they are on
+[PR #968](https://github.com/drandyhaas/KiCadRoutingTools/pull/968). The earlier measurements below remain pinned to their
 original revisions; they are not a substitute for that final verification.
 The original failure was reproduced on current upstream
 `5a7fbcb6ee4deebd1d9ec1d5bd094d8681f502f3`, not inferred from an older report.
@@ -133,10 +134,11 @@ The independent final verifier checked the committed implementation, actual
 output boards and alternate CLI paths, and identified the custom-circle
 coverage overclaim before finalization. That finding was fixed and covered by
 a regression in `39d91f27`. The PR's validation record pins the final revision
-and contains the final command/native evidence. The committed
-[command and geometry record](issue-967-evidence.json) includes production-tree
-identities, 21 core CLI commands, eight alternate commands and four DRC checks
-on alternate outputs. Eight written actor outputs preserve all 17 fixed blocks,
+and contains the final command/native evidence. The command and geometry record --
+kept on [PR #968](https://github.com/drandyhaas/KiCadRoutingTools/pull/968)
+rather than in this repository -- includes production-tree identities, 21 core
+CLI commands, eight alternate commands and four DRC checks on alternate
+outputs. Eight written actor outputs preserve all 17 fixed blocks,
 board graphics and brief; the separate project scenario preserves its project.
 The final verifier found no remaining discrepancy within the exercised scope.
 
