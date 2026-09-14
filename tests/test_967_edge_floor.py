@@ -192,7 +192,19 @@ class EdgeFloor(unittest.TestCase):
         report = grade_pad_edge_clearance(pcb, .55, str(board))
         self.assertFalse(report['complete'])
         self.assertIn('unsupported', report['unmeasured'][0]['reason'])
+        # Existing custom-circle polygonization is inscribed (32 vertices).
+        # At half a sample step it understates the radius by 0.0024076 mm:
+        # a true .548 gap can look >= .55, so this cannot certify native copper.
+        centre_y = 105.5-.5-.548
+        pad.polygons = [[(130+.5*math.cos(math.radians(5.625+i*11.25)),
+                          centre_y+.5*math.sin(math.radians(5.625+i*11.25)))
+                         for i in range(32)]]
+        report = grade_pad_edge_clearance(pcb, .55, str(board))
+        self.assertGreater(report['minimum_gap_mm'], .55)
+        self.assertFalse(report['complete'])
+        self.assertIn('parsed polygons', report['unmeasured'][0]['reason'])
         pad.shape = 'rect'
+        pad.polygons = None
         # A bounding box without a source/ring is not evidence of a closed board.
         pcb.source_path = None
         report = grade_pad_edge_clearance(pcb, .55)

@@ -3384,6 +3384,11 @@ def grade_pad_edge_clearance(pcb_data, required: float, pcb_file=None) -> Dict:
                                          gap_mm=None, shortfall_mm=amount, edge=edge))
                 continue
             if polygons:
+                # The parser tessellates custom circles/arcs into inscribed
+                # polygons. Their extrema can understate copper reach by more
+                # than EPS; keep the measured findings but never certify the
+                # native custom shape from that approximation.
+                unmeasured.append(dict(identity, reason='custom pad uses parsed polygons'))
                 points = [p for poly in polygons for p in poly]
                 x0, y0 = min(p[0] for p in points), min(p[1] for p in points)
                 x1, y1 = max(p[0] for p in points), max(p[1] for p in points)
