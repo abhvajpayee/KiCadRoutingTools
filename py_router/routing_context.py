@@ -532,9 +532,10 @@ def prepare_obstacles_inplace(
     # matching the copper it stands for.
     _op_lift = (getattr(pcb_data, '_graphic_own_pad_lift', None)
                 or {}).get(net_id)
-    if (_op_lift is not None and len(_op_lift)
-            and net_id != getattr(pcb_data,
-                                  '_graphic_own_pad_lift_baked', None)):
+    from obstacle_map import BAKED_BY_MAP as _BBM
+    _baked_here = (_BBM.get(id(working_obstacles))
+                   or _BBM.get(id(getattr(working_obstacles, 'unwrap', lambda: None)())))
+    if (_op_lift is not None and len(_op_lift) and net_id != _baked_here):
         working_obstacles.remove_blocked_cell_spans_batch(_op_lift)
         _OWNPAD_LIFTED[(id(working_obstacles), net_id)] = _op_lift
     # #908 VIA half. Stamped for every net and, until now, lifted for none --
@@ -543,9 +544,7 @@ def prepare_obstacles_inplace(
     # layer was. Same baked guard, same balanced remove/restore.
     _op_via = (getattr(pcb_data, '_graphic_own_pad_via_lift', None)
                or {}).get(net_id)
-    if (_op_via is not None and len(_op_via)
-            and net_id != getattr(pcb_data,
-                                  '_graphic_own_pad_lift_baked', None)):
+    if (_op_via is not None and len(_op_via) and net_id != _baked_here):
         working_obstacles.remove_blocked_via_spans_batch(_op_via)
         _OWNPAD_VIA_LIFTED[(id(working_obstacles), net_id)] = _op_via
 
@@ -779,6 +778,58 @@ def restore_obstacles_inplace(
     # Note: If routing succeeded, caller should update cache first with new route data
     if net_id in net_obstacles_cache:
         add_net_obstacles_from_cache(working_obstacles, net_obstacles_cache[net_id])
+
+
+
+def ensure_own_pad_lift(obstacles, pcb_data, net_id):
+    """Apply the #908 own-pad lift to `obstacles` if it is not there already.
+
+    prepare_obstacles_inplace lifts the map IT mutates, and the single-net base
+    build bakes the map IT returns -- but a net can be routed on a map that had
+    neither: multipoint Phase 3 receives a map built elsewhere, and measured on
+    cparti_fpga its view of a net-tie pad was sealed (the approach solid on
+    F.Cu) while the same board with the tie copper removed had it open. The
+    lift rows were sitting on pcb_data, unapplied, the whole time.
+
+    IDEMPOTENT, because double-lifting is the hazard #908 already paid for: a
+    cell two obstacles blocked would go 2 -> 0 instead of 2 -> 1 and the
+    restore would hand it back at 1, leaving the map describing copper that is
+    not there. The (map, net) registry prepare already keeps is the same one
+    consulted here, and a map whose base BAKED this net is skipped outright.
+
+    Returns a token for `release_own_pad_lift`, or None when nothing was done.
+    """
+    from obstacle_map import BAKED_BY_MAP as _BBM
+    if net_id == (_BBM.get(id(obstacles))
+                  or _BBM.get(id(getattr(obstacles, 'unwrap', lambda: None)()))):
+        return None
+    key = (id(obstacles), net_id)
+    if key in _OWNPAD_LIFTED or key in _OWNPAD_VIA_LIFTED:
+        return None
+    cells = (getattr(pcb_data, '_graphic_own_pad_lift', None) or {}).get(net_id)
+    vias = (getattr(pcb_data, '_graphic_own_pad_via_lift', None) or {}).get(net_id)
+    did = False
+    if cells is not None and len(cells):
+        obstacles.remove_blocked_cell_spans_batch(cells)
+        _OWNPAD_LIFTED[key] = cells
+        did = True
+    if vias is not None and len(vias):
+        obstacles.remove_blocked_via_spans_batch(vias)
+        _OWNPAD_VIA_LIFTED[key] = vias
+        did = True
+    return key if did else None
+
+
+def release_own_pad_lift(obstacles, net_id, token):
+    """Undo `ensure_own_pad_lift`. Safe to call with None."""
+    if token is None:
+        return
+    cells = _OWNPAD_LIFTED.pop(token, None)
+    if cells is not None and len(cells):
+        obstacles.add_blocked_cell_spans_batch(cells)
+    vias = _OWNPAD_VIA_LIFTED.pop(token, None)
+    if vias is not None and len(vias):
+        obstacles.add_blocked_via_spans_batch(vias)
 
 
 def record_diff_pair_success(

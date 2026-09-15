@@ -4286,11 +4286,18 @@ def route_multipoint_taps(
     net's recomputed obstacle cache), so remove exactly the cells added, on
     every exit path. On a clone the removal is harmless."""
     ring_cells: list = []
+    # #908: Phase 3 routes on a map built elsewhere, which had neither
+    # prepare's lift nor the single-net bake -- so a footprint's own copper
+    # sealed the pad it was drawn around here even when every other path was
+    # correct. Idempotent, and released on every exit beside the via rings.
+    from routing_context import ensure_own_pad_lift, release_own_pad_lift
+    _oplift = ensure_own_pad_lift(obstacles, pcb_data, net_id)
     try:
         return _route_multipoint_taps_impl(
             pcb_data, net_id, config, obstacles, main_result,
             global_offset, global_total, global_failed, ring_cells)
     finally:
+        release_own_pad_lift(obstacles, net_id, _oplift)
         if ring_cells:
             _rc = np.array(ring_cells, dtype=np.int32)
             obstacles.remove_blocked_vias_batch(_rc)

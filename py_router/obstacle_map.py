@@ -76,6 +76,18 @@ class _StaticStampProxy:
         return getattr(self._real, name)
 
 
+#: #908: which net a build BAKED into a given map, keyed by the map itself.
+#: The marker used to live on pcb_data, which every build shares, so a nested
+#: single-net build left its marker behind and `prepare_obstacles_inplace`
+#: then skipped the lift on the BATCH map (measured on cparti_fpga: build#1
+#: published 32 rows for net 88 and was overwritten by builds publishing 128
+#: and 122, each marking baked=88). Keyed by map, each answer describes the
+#: map it is actually about. Ids are reused after garbage collection, so a
+#: stale entry can only ever appear on a map that replaced a baked one -- and
+#: it is rewritten by that map's own build before anything reads it.
+BAKED_BY_MAP: Dict[int, int] = {}
+
+
 #: Shared empty set for the #908 own-pad lift lookup, so the hot segment
 #: loop allocates nothing per row.
 _EMPTY_NETS = frozenset()
@@ -495,6 +507,8 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
         if _arr is not None and len(_arr):
             obstacles.remove_blocked_cell_spans_batch(_arr)
             pcb_data._graphic_own_pad_lift_baked = _nid
+            BAKED_BY_MAP[id(obstacles)] = _nid
+            BAKED_BY_MAP[id(_real_obstacles)] = _nid
         if _varr is not None and len(_varr):
             obstacles.remove_blocked_via_spans_batch(_varr)
             pcb_data._graphic_own_pad_lift_baked = _nid
