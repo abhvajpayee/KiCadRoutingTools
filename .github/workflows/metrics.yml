@@ -1,0 +1,77 @@
+name: Weekly reach metrics
+
+# Snapshots GitHub's reach data into metrics/data (committed, so it becomes a
+# permanent archive) and republishes docs/metrics/index.html to GitHub Pages.
+#
+# WHY WEEKLY IS ENOUGH, AND WHY IT CANNOT BE MONTHLY: the traffic API is a
+# ROLLING 14-DAY WINDOW that GitHub does not backfill. Each call returns 14
+# daily buckets, so runs up to 14 days apart still observe every day -- but a
+# gap longer than that loses those days for everyone, permanently. Weekly
+# leaves exactly one run of margin, which is why a failed run is worth looking
+# at rather than waiting out.
+#
+# TOKEN: the traffic endpoints require PUSH access, which the default
+# GITHUB_TOKEN may not satisfy. Set a repository secret METRICS_TOKEN (a
+# fine-grained PAT with Administration: read-only on this repo) and it is used
+# in preference. Without it the release history -- which is public -- is still
+# collected, and the published page states which endpoints failed rather than
+# rendering a hole as a quiet week.
+#
+# ONE-TIME SETUP: Settings -> Pages -> Source = "GitHub Actions".
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'   # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit the snapshot back to the branch
+  pages: write      # publish
+  id-token: write   # required by actions/deploy-pages
+
+# Never let two runs publish at once, but do NOT cancel one in progress: it may
+# already have banked a snapshot, and losing it loses those days for good.
+concurrency:
+  group: metrics-pages
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Snapshot and render
+        env:
+          GH_TOKEN: ${{ secrets.METRICS_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.METRICS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: python3 py_tools/repo_metrics.py
+
+      - name: Commit the archive
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metrics/data docs/metrics
+          if git diff --cached --quiet; then
+            echo "no change to commit"
+          else
+            git commit -m "metrics: weekly reach snapshot $(date -u +%Y-%m-%d)"
+            # Rebase rather than force: a human commit landing during the run
+            # must not be discarded by a bookkeeping job.
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/metrics
+      - id: deploy
+        uses: actions/deploy-pages@v4

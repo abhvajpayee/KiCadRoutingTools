@@ -1851,6 +1851,47 @@ board is simply unfilled, and `kicad-cli pcb drc --refill-zones` (or **B** in
 KiCad) still grades it correctly. Exit 0 when filled with classes intact,
 1 when the fill did not run or a class went missing.
 
+## Reach Metrics (`repo_metrics.py`)
+
+Snapshots this repository's own GitHub reach — release asset downloads, daily
+views and clones, referrers and popular paths — into `metrics/data/`, and
+renders `docs/metrics/index.html` for GitHub Pages. Run weekly by
+`.github/workflows/metrics.yml`.
+
+**Why it must be committed and run on a schedule:** GitHub's traffic API is a
+**rolling 14-day window** that is never backfilled. Days older than that are
+discarded by GitHub and cannot be recovered by anyone, so the committed archive
+under `metrics/data/` is the project's only history of its own reach. Release
+counters do not expire, but they are **cumulative**, so "how many downloads
+last week" exists only as the difference between two snapshots.
+
+Each traffic call returns 14 daily buckets, so weekly collection observes every
+day with a week of margin; merging is by date keeping the **max**, which makes
+overlapping runs idempotent and lets a part-elapsed day be corrected by the
+next run instead of being frozen low.
+
+**Two populations, never summed.** The PCM zip is what KiCad's Plugin and
+Content Manager fetches on install/update, and it accumulates on whichever
+release PCM currently points at — so a newer release showing few zip downloads
+means PCM has not been pointed at it, not that interest fell. The
+`grid_router-*` binaries are fetched by `build_router.py` and therefore count
+from-source installs **including this project's own CI**: every Modal image
+build downloads the Linux binary, which makes Linux an upper bound rather than
+a user count.
+
+```bash
+# Both stages (default): snapshot, then render
+python3 py_tools/repo_metrics.py
+
+# Re-render the page from the committed archive without calling the API
+python3 py_tools/repo_metrics.py --only render
+```
+
+The traffic endpoints need a token with **push access**; releases are public
+and need none. A failing endpoint is recorded in `metrics/data/meta.json` and
+disclosed on the page, because a silently absent series looks exactly like a
+quiet week.
+
 ## Common Workflows
 
 ### Route and Verify
