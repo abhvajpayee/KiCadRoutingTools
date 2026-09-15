@@ -214,6 +214,17 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
     # Use actual segment width for obstacle, and layer-specific width for routing track
     _seg_cell_batch: Dict[int, list] = {}
     _seg_via_batch: list = []
+    # #908: rows that the own-pad lift may later REMOVE must be stamped into
+    # the DYNAMIC refcount map, never the #422 static bitmap. `_StaticStampProxy`
+    # redirects add_blocked_* to add_static_blocked_* but leaves remove_blocked_*
+    # passing through to the dynamic layer, so a statically stamped cell can be
+    # added and never taken away -- the lift called remove, removed nothing, and
+    # reported success. Measured on cparti_fpga: a 9x9 window on F.Cu around a
+    # net-tie pad was solid blocked AFTER the lift, while the same window on the
+    # same board with the polys demoted off copper was open. These batches are
+    # tiny (16 segments there), so the #422 memory win is untouched.
+    _lift_cell_batch: Dict[int, list] = {}
+    _lift_via_batch: list = []
     # #908: copper a FOOTPRINT draws (an SOT89 tab, a solder-jumper bridge, a
     # PCB antenna) carries no net, so it is foreign copper to every net --
     # including the net of the pad it was drawn around. Stamped whole, U2's tab
@@ -297,7 +308,8 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
             seg.start_x, seg.start_y, seg.end_x, seg.end_y,
             expansion_mm, coord.grid_step)
         if len(cells_arr):
-            _seg_cell_batch.setdefault(layer_idx, []).append(cells_arr)
+            (_lift_cell_batch if _lift_nets else _seg_cell_batch
+             ).setdefault(layer_idx, []).append(cells_arr)
             if _lift_nets:
                 # The exact rows this segment contributes, in the 4-column
                 # (span + layer) form the flush below uses, so the lift is a
@@ -312,7 +324,7 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
             seg.start_x, seg.start_y, seg.end_x, seg.end_y,
             via_block_mm, coord.grid_step)
         if len(vias_arr):
-            _seg_via_batch.append(vias_arr)
+            (_lift_via_batch if _lift_nets else _seg_via_batch).append(vias_arr)
             if _lift_nets:
                 # #908: the VIA half of the own-pad lift. The track half above
                 # has been lifted since the original fix; this was stamped for
@@ -333,6 +345,20 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
         _rows[:, :3] = _sp
         _rows[:, 3] = _li
         obstacles.add_blocked_cell_spans_batch(np.ascontiguousarray(_rows))
+    # The liftable rows go to the REAL map, bypassing the static proxy, so the
+    # lift's remove_* can actually reach them. When static_base is off,
+    # `obstacles is _real_obstacles` and this is the same call as above.
+    for _li, _arrs in sorted(_lift_cell_batch.items()):
+        _sp = np.concatenate(_arrs) if len(_arrs) > 1 else _arrs[0]
+        _rows = np.empty((len(_sp), 4), dtype=np.int32)
+        _rows[:, :3] = _sp
+        _rows[:, 3] = _li
+        _real_obstacles.add_blocked_cell_spans_batch(np.ascontiguousarray(_rows))
+    if _lift_via_batch:
+        _vl = (np.concatenate(_lift_via_batch)
+               if len(_lift_via_batch) > 1 else _lift_via_batch[0])
+        _real_obstacles.add_blocked_via_spans_batch(
+            np.ascontiguousarray(_vl.astype(np.int32)))
     if _seg_via_batch:
         # Every producer must emit the SAME form (spans, 3 columns). Assert it
         # rather than let np.concatenate raise a dimension error three frames
