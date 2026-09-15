@@ -275,6 +275,49 @@ def _bars(rows, unit=''):
     return ''.join(out)
 
 
+def weekly_rollup(traffic):
+    """ISO-week sums with week-over-week change, newest first.
+
+    THE TRAP THIS EXISTS TO DEFUSE: the current week is always PARTIAL, so it
+    always looks like a collapse. A monitoring page that does not say which row
+    is incomplete trains its reader to ignore the only signal it has -- or to
+    panic every Monday. `days` is the observed day count and `partial` is True
+    below seven, and the week-over-week figure is withheld (None) rather than
+    computed against a stub.
+
+    Sums of daily UNIQUES are reported as unique-days, never as people: the
+    same cloner on Tuesday and Friday is two. That is what GitHub gives.
+    """
+    from datetime import date as _date
+    weeks = {}
+    for kind in ('clones', 'views'):
+        for day, v in (traffic.get(kind) or {}).items():
+            try:
+                y, w, _ = _date(*map(int, day.split('-'))).isocalendar()
+            except Exception:
+                continue
+            row = weeks.setdefault(f'{y}-W{w:02d}', {'week': f'{y}-W{w:02d}',
+                                                     'days': set()})
+            row['days'].add(day)
+            row[kind] = row.get(kind, 0) + v.get('count', 0)
+            row[kind + '_u'] = row.get(kind + '_u', 0) + v.get('uniques', 0)
+    rows = []
+    for key in sorted(weeks):
+        r = weeks[key]
+        r['days'] = len(r['days'])
+        r['partial'] = r['days'] < 7
+        for k in ('clones', 'views', 'clones_u', 'views_u'):
+            r.setdefault(k, 0)
+        rows.append(r)
+    for i, r in enumerate(rows):
+        prev = rows[i - 1] if i else None
+        # No WoW against a partial week in EITHER position: comparing a stub
+        # forwards or backwards manufactures a swing that is pure calendar.
+        r['wow'] = (None if not prev or prev['partial'] or r['partial']
+                    else r['clones'] - prev['clones'])
+    return list(reversed(rows))
+
+
 def clone_character(traffic, releases):
     """Per-day clones, unique cloners, and clones-per-unique.
 
@@ -408,6 +451,23 @@ def render(slug):
                     f'than a quiet week:<ul>{items}</ul>'
                     f'The traffic endpoints need a token with push access.</div>')
 
+    wk = weekly_rollup(traffic)
+    _wk_rows = []
+    for r in wk:
+        part = (f'<span class="part"> {r["days"]}/7 days</span>'
+                if r['partial'] else '')
+        wow = '—' if r['wow'] is None else format(r['wow'], '+,')
+        _wk_rows.append(
+            f'<tr><th>{_esc(r["week"])}{part}</th>'
+            f'<td class="num">{r["clones"]:,}</td>'
+            f'<td class="num">{r["clones_u"]:,}</td>'
+            f'<td class="num">{wow}</td>'
+            f'<td class="num">{r["views"]:,}</td></tr>')
+    wk_html = ''.join(_wk_rows)
+    lifetime_c = sum(v.get('count', 0) for v in traffic.get('clones', {}).values())
+    lifetime_v = sum(v.get('count', 0) for v in traffic.get('views', {}).values())
+    banked = len(traffic.get('clones', {}))
+
     char_rows = clone_character(traffic, releases)
     char_html = ''.join(
         f'<tr><th>{_esc(r["date"])}{" ●" if r["release"] else ""}</th>'
@@ -460,6 +520,7 @@ th {{ font-weight:600 }}
 .key {{ margin-right:14px }}
 .muted {{ color:var(--muted) }}
 .hot {{ color:#c2410c; font-weight:600 }}
+.part {{ font-weight:400; color:var(--muted); font-size:.82em }}
 .note {{ background:var(--card); border:1px solid var(--line); border-left:3px solid var(--muted);
   border-radius:0 8px 8px 0; padding:12px 16px; font-size:.88rem; color:var(--muted) }}
 .warn {{ background:var(--warn); border:1px solid var(--line); border-radius:8px;
@@ -483,6 +544,21 @@ rebuilt weekly from GitHub's API</p>
 unique count per day, and the same person on two days counts twice in any sum
 of them — so the card above says “unique-days”, not “people”. Only the daily
 figures are true uniques.</p>
+
+<h2>Weekly activity</h2>
+<div class="wrap"><table>
+<tr><th>ISO week</th><th class="num">clones</th><th class="num">unique-days</th>
+<th class="num">vs prev</th><th class="num">views</th></tr>
+{wk_html or '<tr><td colspan="5" class="muted">no data yet</td></tr>'}
+</table></div>
+<p class="note"><strong>The newest week is almost always partial, and a
+partial week always looks like a collapse</strong> — so the day count is shown
+whenever it is under seven, and the week-over-week column is withheld rather
+than computed against a stub. Lifetime since collection began
+({banked} day{'' if banked == 1 else 's'} banked):
+<strong>{lifetime_c:,}</strong> clones, <strong>{lifetime_v:,}</strong> views.
+These totals only ever grow from here — the days before the first snapshot are
+gone from GitHub and cannot be recovered.</p>
 
 <h2>Manual vs automated clones</h2>
 <div class="wrap"><table>

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""The reach archive's two invariants, and the page's two disclosures.
+"""The reach archive's arithmetic invariants, and the page's disclosures.
 
 OFFLINE BY CONSTRUCTION. Nothing here touches the network: the collector's API
 layer is never called, only the pure merge/rollup functions and the renderer,
 which read the committed archive. A test that needed GitHub would fail on every
 machine without a token and be deleted within a month.
 
-WHY THESE FOUR. Each one is a claim the page makes that a future edit could
-quietly invert while the page still renders and still looks plausible:
+WHY THESE. Each is a claim the page makes that a future edit could quietly
+invert while the page still renders and still looks plausible:
 
 1. Merging keeps the MAX per date. A part-elapsed day observed by one run must
    not be frozen at its partial value by a later run seeing the same day, and a
@@ -21,6 +21,12 @@ quietly invert while the page still renders and still looks plausible:
    if the caveat goes, the number becomes a lie rather than a proxy.
 4. A failed endpoint is DISCLOSED. A silently absent series looks exactly like
    a quiet week, which is the failure mode that makes monitoring worthless.
+5. A PARTIAL week is marked and never differenced against. The newest week is
+   always incomplete, so an unguarded week-over-week column reports a collapse
+   every Monday and trains its reader to ignore the only trend line there is.
+6. No clone row claims a human count. GitHub exposes no actor, so `uniques` is
+   a proxy and the ratio is an automation index -- a later edit renaming either
+   to `people` would turn an honest estimate into a false measurement.
 """
 import os
 import sys
@@ -155,6 +161,32 @@ def t_clone_character_is_a_ratio_not_a_headcount():
           f"keys={sorted(spike)}")
 
 
+def t_weekly_rollup_withholds_a_stub_comparison():
+    """A partial week must be marked, and never differenced against."""
+    def days(start_day, n, per):
+        return {f'2026-09-{start_day + i:02d}': {'count': per, 'uniques': per // 2}
+                for i in range(n)}
+    # W37 = Mon 2026-09-07 .. Sun 2026-09-13 (complete, 7 days)
+    # W38 = Mon 2026-09-14 .. (one day only, partial)
+    traffic = {'clones': {**days(7, 7, 100), **days(14, 1, 100)}, 'views': {}}
+    rows = {r['week']: r for r in M.weekly_rollup(traffic)}
+    full, part = rows['2026-W37'], rows['2026-W38']
+    check('t_partial_week_is_marked',
+          full['partial'] is False and part['partial'] is True
+          and full['days'] == 7 and part['days'] == 1,
+          f"full={full['days']}/7, partial={part['days']}/7")
+    check('t_no_wow_against_a_partial_week', part['wow'] is None,
+          'the newest, partial week would otherwise read as a -600 collapse')
+
+    # The control: two COMPLETE weeks DO get a comparison, or the rule above
+    # is indistinguishable from "wow never works".
+    traffic2 = {'clones': {**days(7, 7, 100), **days(14, 7, 120)}, 'views': {}}
+    r2 = {r['week']: r for r in M.weekly_rollup(traffic2)}
+    check('t_two_complete_weeks_do_compare',
+          r2['2026-W38']['wow'] == 140,
+          f"W38 840 vs W37 700 -> {r2['2026-W38']['wow']}")
+
+
 def t_a_failed_endpoint_is_disclosed_not_hidden():
     with tempfile.TemporaryDirectory() as tmp:
         clean = _render_into(tmp, {'last_collected': 'x', 'errors': {}})
@@ -175,6 +207,7 @@ def main():
     t_pcm_and_binaries_are_counted_apart()
     t_page_discloses_what_the_numbers_are_not()
     t_clone_character_is_a_ratio_not_a_headcount()
+    t_weekly_rollup_withholds_a_stub_comparison()
     t_a_failed_endpoint_is_disclosed_not_hidden()
     print()
     if FAILS:
