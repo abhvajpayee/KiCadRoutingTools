@@ -240,6 +240,7 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
         # indistinguishable from a routing failure.
         _own_pad_nets = graphic_own_pad_nets(pcb_data)
     _own_pad_rows: Dict[int, list] = {}
+    _own_pad_via_rows: Dict[int, list] = {}
     _n_segs = len(pcb_data.segments)
     for _seg_i, seg in enumerate(pcb_data.segments):
         if (_seg_i & 511) == 0:
@@ -312,6 +313,17 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
             via_block_mm, coord.grid_step)
         if len(vias_arr):
             _seg_via_batch.append(vias_arr)
+            if _lift_nets:
+                # #908: the VIA half of the own-pad lift. The track half above
+                # has been lifted since the original fix; this was stamped for
+                # every net and lifted for none, so a footprint's own copper
+                # kept a via keep-out (via/2 + seg/2 + clearance -- 0.465mm on
+                # cparti_fpga's ties) sitting over the very pad it was drawn
+                # around. A pad that needs a via to be reached was therefore
+                # unreachable however clear the track layer was, which is why
+                # lifting only the cells did not free the tie pads.
+                for _ln in _lift_nets:
+                    _own_pad_via_rows.setdefault(_ln, []).append(vias_arr)
 
     # Flush the accumulated segment stamps: one Rust call per layer for the
     # track keep-outs, one for the via keep-outs.
@@ -423,6 +435,9 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
     pcb_data._graphic_own_pad_lift = {
         _nid: np.ascontiguousarray(np.concatenate(_rws))
         for _nid, _rws in _own_pad_rows.items() if _rws}
+    pcb_data._graphic_own_pad_via_lift = {
+        _nid: np.ascontiguousarray(np.concatenate(_rws))
+        for _nid, _rws in _own_pad_via_rows.items() if _rws}
     # WHICH net this build BAKED into the map it is about to return, so
     # `prepare_obstacles_inplace` does not lift the same rows a SECOND time.
     #
@@ -450,8 +465,12 @@ def build_base_obstacle_map(pcb_data: PCBData, config: GridRouteConfig,
     if len(nets_to_route_set) == 1:
         _nid = next(iter(nets_to_route_set))
         _arr = pcb_data._graphic_own_pad_lift.get(_nid)
+        _varr = pcb_data._graphic_own_pad_via_lift.get(_nid)
         if _arr is not None and len(_arr):
             obstacles.remove_blocked_cell_spans_batch(_arr)
+            pcb_data._graphic_own_pad_lift_baked = _nid
+        if _varr is not None and len(_varr):
+            obstacles.remove_blocked_via_spans_batch(_varr)
             pcb_data._graphic_own_pad_lift_baked = _nid
 
     # Add board edge clearance

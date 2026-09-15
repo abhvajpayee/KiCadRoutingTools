@@ -260,6 +260,34 @@ def build_single_ended_obstacles(
     """
     obstacles = base_obstacles.clone_fresh()
 
+    # #908: the own-pad lift has to ride THIS path too, or a footprint's own
+    # copper seals the pad it was drawn around on every net routed through
+    # here. `prepare_obstacles_inplace` lifts it for the map it mutates, and
+    # `build_base_obstacle_map` BAKES it when the base was built for a single
+    # net -- but this builder clones a base built for the whole batch and was
+    # covered by neither, so the lift simply never happened.
+    #
+    # Measured on cparti_fpga's net ties: with the lift correct but absent
+    # here, HF_Bn_50Ohm routed 3 of 4 pads and failed at the tie pad; the same
+    # board with the tie copper physically removed routed 4 of 4. The lift was
+    # being computed, recorded and then not applied on the map the net was
+    # actually routed on.
+    #
+    # No restore, unlike prepare_obstacles_inplace: this is a `clone_fresh()`
+    # built for ONE net and discarded after it, so there is no shared map to
+    # put the rows back into and no refcount to desync. The bake guard is the
+    # same one prepare uses -- lifting rows a baked base already removed would
+    # take a cell 2 -> 0 instead of 2 -> 1.
+    _op_lift = (getattr(pcb_data, '_graphic_own_pad_lift', None)
+                or {}).get(net_id)
+    _op_via = (getattr(pcb_data, '_graphic_own_pad_via_lift', None)
+               or {}).get(net_id)
+    if net_id != getattr(pcb_data, '_graphic_own_pad_lift_baked', None):
+        if _op_lift is not None and len(_op_lift):
+            obstacles.remove_blocked_cell_spans_batch(_op_lift)
+        if _op_via is not None and len(_op_via):
+            obstacles.remove_blocked_via_spans_batch(_op_via)
+
     # Add previously routed nets as obstacles
     # Note: Cannot use cache for routed nets because their segments have changed
     for routed_id in routed_net_ids:
@@ -509,6 +537,17 @@ def prepare_obstacles_inplace(
                                   '_graphic_own_pad_lift_baked', None)):
         working_obstacles.remove_blocked_cell_spans_batch(_op_lift)
         _OWNPAD_LIFTED[(id(working_obstacles), net_id)] = _op_lift
+    # #908 VIA half. Stamped for every net and, until now, lifted for none --
+    # so a footprint's own copper kept a via keep-out over the pad it was drawn
+    # around and a pad needing a via stayed unreachable however clear the track
+    # layer was. Same baked guard, same balanced remove/restore.
+    _op_via = (getattr(pcb_data, '_graphic_own_pad_via_lift', None)
+               or {}).get(net_id)
+    if (_op_via is not None and len(_op_via)
+            and net_id != getattr(pcb_data,
+                                  '_graphic_own_pad_lift_baked', None)):
+        working_obstacles.remove_blocked_via_spans_batch(_op_via)
+        _OWNPAD_VIA_LIFTED[(id(working_obstacles), net_id)] = _op_via
 
     _tie_lift = getattr(pcb_data, '_net_tie_lift', None)
     if _tie_lift:
@@ -683,6 +722,7 @@ def prepare_obstacles_inplace(
 _TIE_LIFTED: Dict[tuple, list] = {}
 #: #908 own-pad lift, same lifetime and keying as _TIE_LIFTED.
 _OWNPAD_LIFTED: Dict[tuple, object] = {}
+_OWNPAD_VIA_LIFTED: Dict[tuple, object] = {}
 
 
 def restore_obstacles_inplace(
@@ -731,6 +771,9 @@ def restore_obstacles_inplace(
     _op = _OWNPAD_LIFTED.pop((id(working_obstacles), net_id), None)
     if _op is not None and len(_op):
         working_obstacles.add_blocked_cell_spans_batch(_op)
+    _opv = _OWNPAD_VIA_LIFTED.pop((id(working_obstacles), net_id), None)
+    if _opv is not None and len(_opv):
+        working_obstacles.add_blocked_via_spans_batch(_opv)
 
     # Restore current net's obstacles (from cache - original stubs)
     # Note: If routing succeeded, caller should update cache first with new route data
