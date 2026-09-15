@@ -196,11 +196,41 @@ def t_a_foreign_net_is_still_blocked_by_the_tie_copper():
           f'{len(extra)} cell(s) blocked for FOREIGN that the control leaves free')
 
 
+def t_the_short_gate_does_not_see_the_tie_as_foreign():
+    """The geometric terminal-short gate, which reads copper, not the map.
+
+    The obstacle map can be perfectly lifted and the net still fail: the rescue
+    pass finds a route to the tie pad, then `_neck_terminal_grazes` measures the
+    terminal against "foreign" copper, finds the tie's own net-0 bridge under it
+    and rejects the route as a shipped short. Measured on cparti_fpga, that was
+    the LAST thing standing between the fixed map and a routed net -- repeated
+    "terminal copper on F.Cu would OVERLAP a foreign track/via (edge dist
+    -0.147mm)" while the copper-free control rescued the same gap and
+    reconnected.
+    """
+    from single_ended_routing import _seg_foreign_seg_dist
+    real = _board('F.Cu')
+    a, foreign = _net(real, 'TIED_A'), _net(real, 'FOREIGN')
+    # A terminal segment lying straight along the tie bridge.
+    x1, y1, x2, y2 = 9.6, 10.0, 10.4, 10.0
+    d_tied = _seg_foreign_seg_dist(real, a, x1, y1, x2, y2, 'F.Cu')
+    d_foreign = _seg_foreign_seg_dist(real, foreign, x1, y1, x2, y2, 'F.Cu')
+    check('t_the_short_gate_does_not_see_the_tie_as_foreign',
+          d_tied > 0.0,
+          f'a tied net measures {d_tied:.4f}mm to "foreign" copper (must be clear)')
+    # The control direction: the same copper IS foreign to an unrelated net, or
+    # the exemption would be "never a short", which ships real ones.
+    check('t_the_short_gate_still_sees_it_for_a_foreign_net',
+          d_foreign <= 0.0,
+          f'a foreign net measures {d_foreign:.4f}mm (must overlap)')
+
+
 def main():
     t_the_fixture_really_has_modelled_tie_copper()
     t_the_tie_copper_lifts_for_both_tied_nets()
     t_a_tied_net_sees_the_map_it_would_see_without_the_tie_copper()
     t_a_foreign_net_is_still_blocked_by_the_tie_copper()
+    t_the_short_gate_does_not_see_the_tie_as_foreign()
     print()
     if FAILS:
         print(f"{len(FAILS)} FAILURE(S): {', '.join(FAILS)}")

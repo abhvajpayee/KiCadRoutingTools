@@ -368,8 +368,11 @@ def _foreign_seg_arrays(pcb_data, layer):
     arr = per_layer.get(layer)
     if arr is None:
         nid, ax, ay, bx, by, hw = [], [], [], [], [], []
+        _row_segs = []
+        _own_pad_nets = _cached_own_pad_nets(pcb_data)
         for s in pcb_data.segments:
             if s.layer == layer:
+                _row_segs.append(s)
                 nid.append(s.net_id); ax.append(s.start_x); ay.append(s.start_y)
                 bx.append(s.end_x); by.append(s.end_y)
                 hw.append((s.width if s.width > 0 else 0.0) / 2.0)
@@ -379,6 +382,20 @@ def _foreign_seg_arrays(pcb_data, layer):
             r = (v.size if getattr(v, 'size', 0) and v.size > 0 else 0.0) / 2.0
             nid.append(v.net_id); ax.append(v.x); ay.append(v.y)
             bx.append(v.x); by.append(v.y); hw.append(r)
+        # #908: which rows are a FOOTPRINT'S OWN copper, and which nets that
+        # copper is the intended conductor for. A net tie's bridge is net 0, so
+        # the plain `nid != net_id` test below calls it foreign to the very
+        # nets it exists to join -- and the terminal SHORT gate then rejects
+        # every rescue that lands on the tie pad ("terminal copper would
+        # OVERLAP a foreign track/via"). Recorded here so the mask is built
+        # once per (layer, net) and dies with these arrays.
+        _g_rows, _g_nets = [], []
+        for _i, _s in enumerate(_row_segs):
+            if getattr(_s, 'graphic', False):
+                _lift = _own_pad_nets.get(id(_s))
+                if _lift:
+                    _g_rows.append(_i); _g_nets.append(_lift)
+        per_layer[(layer, 'giftrows')] = (_g_rows, _g_nets)
         arr = (np.asarray(nid, dtype=np.int64), np.asarray(ax, dtype=float),
                np.asarray(ay, dtype=float), np.asarray(bx, dtype=float),
                np.asarray(by, dtype=float), np.asarray(hw, dtype=float))
@@ -392,6 +409,48 @@ def _foreign_seg_arrays(pcb_data, layer):
                                       np.minimum(_ay, _by) - _hw,
                                       np.maximum(_ay, _by) + _hw)
     return arr
+
+
+def _cached_own_pad_nets(pcb_data):
+    """`graphic_own_pad_nets` memoised on pcb_data, keyed with the segment
+    cache signature so it dies exactly when that does."""
+    sig = getattr(pcb_data, '_foreign_seg_arr_cache', (None,))[0]
+    hit = getattr(pcb_data, '_gopn_cache', None)
+    if hit is not None and hit[0] == sig:
+        return hit[1]
+    try:
+        from check_drc import graphic_own_pad_nets
+        out = graphic_own_pad_nets(pcb_data)
+    except Exception:
+        out = {}
+    pcb_data._gopn_cache = (sig, out)
+    return out
+
+
+def _foreign_seg_exempt(pcb_data, layer, net_id, n_rows):
+    """Boolean mask of foreign-array rows that are NOT foreign to `net_id`.
+
+    #908: a footprint's own copper carries no net, so it is foreign to every
+    net including the pad it was drawn around -- and for a NET TIE it is the
+    conductor between the two nets it ties. Overlapping it is the intended
+    connection, not a short. The obstacle map already lifts it; this is the
+    same exemption for the geometric terminal-graze / short gate, which reads
+    copper directly rather than the map. Foreign nets are untouched: a row is
+    exempt only for the nets its own footprint's pads put on it.
+    """
+    _foreign_seg_arrays(pcb_data, layer)
+    per_layer = pcb_data._foreign_seg_arr_cache[1]
+    key = (layer, 'exempt', net_id)
+    hit = per_layer.get(key)
+    if hit is not None and len(hit) == n_rows:
+        return hit
+    rows, nets = per_layer.get((layer, 'giftrows'), ([], []))
+    mask = np.zeros(n_rows, dtype=bool)
+    for _i, _lift in zip(rows, nets):
+        if _i < n_rows and net_id in _lift:
+            mask[_i] = True
+    per_layer[key] = mask
+    return mask
 
 
 def _foreign_seg_bboxes(pcb_data, layer):
@@ -432,6 +491,7 @@ def _seg_foreign_seg_dist(pcb_data, net_id, x1, y1, x2, y2, layer,
     fminx, fmaxx, fminy, fmaxy = _foreign_seg_bboxes(pcb_data, layer)
     near = ((fmaxx >= min(x1, x2) - R) & (fminx <= max(x1, x2) + R) &
             (fmaxy >= min(y1, y2) - R) & (fminy <= max(y1, y2) + R) & (nid != net_id))
+    near &= ~_foreign_seg_exempt(pcb_data, layer, net_id, nid.size)
     if not near.any():
         return 1e9
     ax, ay, bx, by, hw = fax[near], fay[near], fbx[near], fby[near], fhw[near]
