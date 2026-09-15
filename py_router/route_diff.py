@@ -1425,8 +1425,13 @@ def batch_route_diff_pairs(input_file: str, output_file: str, net_names: List[st
                 })
 
     # Sync pcb_data with length-matched segments
+    # Stub layer-swap vias ride all_swap_vias, not any result's new_vias, and
+    # the writer emits them -- so to the sync they are originals (see route.py).
+    # Dropping them severs every layer-swapped leg from its pad in pcb_data, and
+    # the dead-end sweep that runs next then trims the whole leg off the board.
     sync_pcb_data_segments(pcb_data, routed_results, original_segment_ids, state, config,
-                           original_via_ids=original_via_ids)
+                           original_via_ids=(original_via_ids
+                                             | {id(v) for v in all_swap_vias}))
 
     # #521: coupled pair copper is an invariant later chain steps cannot
     # reproduce (P/N geometry, gap, polarity) -- mark routed members protected

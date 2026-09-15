@@ -2397,8 +2397,14 @@ def batch_route(input_file: str, output_file: str, net_names: List[str],
     # This ensures tap routes see meanders from other nets as obstacles
     if progress_callback:
         progress_callback(0, 0, "Syncing pcb_data...")
+    # Stub layer-swap vias live in all_swap_vias and in NO result's new_vias,
+    # yet the writer emits them (output_writer's all_swap_vias channel). They
+    # are shipped copper, so the sync must preserve them exactly like an
+    # input-file original -- the same union run_post_route_cleanup's orphan
+    # sweep already takes below, for the same reason.
     sync_pcb_data_segments(pcb_data, routed_results, original_segment_ids, state, config,
-                           original_via_ids=original_via_ids)
+                           original_via_ids=(original_via_ids
+                                             | {id(v) for v in all_swap_vias}))
 
     # Phase 3: Complete multi-point routing (tap connections)
     # This happens AFTER length matching so tap routes connect to meandered main routes
