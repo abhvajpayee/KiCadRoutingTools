@@ -2896,31 +2896,8 @@ def add_same_net_via_clearance(obstacles: GridObstacleMap, pcb_data: PCBData,
         EX, EY = np.meshgrid(ax, ax, indexing='ij')
         m = EX * EX + EY * EY <= radius_sq
         if m.any():
-            _ring = np.column_stack([EX[m] + gx, EY[m] + gy])
-            obstacles.add_blocked_vias_batch(_ring)
-            # MIRROR into the small/per-net rung maps, exactly as the #581 pad
-            # keep-out above does and for the identical reason: a rung-1 search
-            # consults only blocked_vias_small (and the #530 per-net rungs) for
-            # dynamic copper, so an ESCALATED small via was never told about
-            # this ring and could land inside it.
-            #
-            # That is not hypothetical. mod_bme280 shipped two same-net vias
-            # 0.180mm apart -- drill 0.3 beside drill 0.15 -- whose HOLES
-            # overlap by 0.045mm against a 0.25mm hole-to-hole rule. The ring
-            # radius (via_size + clearance = 0.65mm here) would have refused
-            # the site outright; the small-rung search simply never saw it.
-            #
-            # The same cells are mirrored rather than a radius recomputed for
-            # the smaller geometry: a keep-out sized for the NOMINAL via is
-            # conservative for a smaller one, and blocking a little more can
-            # only cost a via site, while blocking too little ships a fab
-            # defect no DRC waiver covers.
-            try:
-                if _rung_small_armed():
-                    obstacles.add_blocked_vias_small_batch(_ring)
-                _mirror_rungs_add(obstacles, _ring)   # #530 per-net rungs
-            except (AttributeError, NameError):
-                pass
+            obstacles.add_blocked_vias_batch(
+                np.column_stack([EX[m] + gx, EY[m] + gy]))
 
 
 def add_same_net_pad_drill_via_clearance(obstacles: GridObstacleMap, pcb_data: PCBData,
