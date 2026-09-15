@@ -860,9 +860,60 @@ def graphic_own_pad_nets(pcb_data):
             if min(point_to_pad_distance(g.start_x, g.start_y, pd),
                    point_to_pad_distance(g.end_x, g.end_y, pd)) <= hw + 1e-6:
                 nets.add(pd.net_id)
+        nets |= _net_tie_group_nets(fp, nets)
         if nets:
             out[id(g)] = frozenset(nets)
     return out
+
+
+def _net_tie_group_nets(fp, touched):
+    """The tie-group nets to add for one piece of a NET TIE's own copper.
+
+    A footprint declaring `(net_tie_pad_groups ...)` shorts those pads THROUGH
+    ITS OWN COPPER -- that copper is the intended conductor between them, not
+    foreign copper that happens to be nearby. The per-pad rule above cannot see
+    that: it lifts each edge only for the pad it physically touches, so on a
+    two-pad tie the two END CAPS lift for one net each and each tied net is
+    walled off by the cap at the other end.
+
+    Measured on cparti_fpga, whose four ties (NT1-NT4) each draw a filled
+    0.8 x 0.2355mm bar: `check_reachability` called NT1.1 **CAGED for any track
+    width**, and demoting just those four polys off copper made it **PASSABLE
+    at 0.15mm with +350um margin**. All 8 pads of those 4 ties shipped
+    unconnected -- 8 of the 23 nets that regressed on that board.
+
+    So a tie's copper is lifted for every net in the group it bridges. Narrow
+    by construction, and it does NOT reopen what the per-pad rule exists to
+    prevent:
+      * only footprints that DECLARE a tie group qualify, which watchy's
+        antenna and esp_prog's tab do not;
+      * only the nets of pads IN that group are added, so a third net is still
+        blocked by the same copper;
+      * the group is matched per group, so a footprint carrying two independent
+        ties never lends one group's nets to the other's copper.
+
+    A piece touching NO pad falls back to the union of the footprint's tie
+    nets: on a net-tie footprint that copper can only be more of the same
+    bridge, and leaving it blocking is what cages the pad in the first place.
+
+    The subset chain still holds -- `graphic_effective_nets` unifies by CLUSTER
+    and already carries both tied nets for this copper, so this can only ever
+    approach the checker's answer, never exceed it.
+    """
+    groups = getattr(fp, 'net_tie_groups', None) or []
+    if not groups:
+        return set()
+    by_number = {str(pd.pad_number): pd.net_id for pd in fp.pads if pd.net_id}
+    group_nets = [{by_number[str(n)] for n in grp if str(n) in by_number}
+                  for grp in groups]
+    add = set()
+    for gn in group_nets:
+        if touched & gn:
+            add |= gn
+    if not touched:
+        for gn in group_nets:
+            add |= gn
+    return add
 
 
 _GRAPHIC_OWN_PAD_NETS = {}  # set per check run beside _GRAPHIC_EFFECTIVE_NETS
