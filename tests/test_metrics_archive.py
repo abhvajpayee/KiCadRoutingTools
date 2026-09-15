@@ -187,6 +187,29 @@ def t_weekly_rollup_withholds_a_stub_comparison():
           f"W38 840 vs W37 700 -> {r2['2026-W38']['wow']}")
 
 
+def t_a_short_read_cannot_shrink_the_lifetime_total():
+    """The rollup takes the max ACROSS snapshots, not the latest snapshot.
+
+    A download counter only grows, so the largest value seen is the true one.
+    Reading only the newest snapshot lets one short read cut the lifetime total
+    and render it as a decline -- which is exactly what the first CI run would
+    have banked, having fetched 30 of 39 releases un-paginated.
+    """
+    full = {'v1': {'published_at': '2026-01-01T00:00:00Z',
+                   'assets': {'KiCadRoutingTools-1.zip': 4000}},
+            'v0': {'published_at': '2025-12-01T00:00:00Z',
+                   'assets': {'KiCadRoutingTools-0.zip': 2500}}}
+    short = {'v1': {'published_at': '2026-01-01T00:00:00Z',
+                    'assets': {'KiCadRoutingTools-1.zip': 4100}}}
+    rows, _plat, pcm = M._release_rollup({'2026-09-08': full, '2026-09-15': short})
+    check('t_a_short_read_cannot_drop_a_release',
+          sorted(r['tag'] for r in rows) == ['v0', 'v1'],
+          f"tags={sorted(r['tag'] for r in rows)}")
+    check('t_a_short_read_cannot_reduce_a_total',
+          sum(pcm.values()) == 6600,
+          f"4100 (risen) + 2500 (kept) = {sum(pcm.values())}")
+
+
 def t_a_failed_endpoint_is_disclosed_not_hidden():
     with tempfile.TemporaryDirectory() as tmp:
         clean = _render_into(tmp, {'last_collected': 'x', 'errors': {}})
@@ -208,6 +231,7 @@ def main():
     t_page_discloses_what_the_numbers_are_not()
     t_clone_character_is_a_ratio_not_a_headcount()
     t_weekly_rollup_withholds_a_stub_comparison()
+    t_a_short_read_cannot_shrink_the_lifetime_total()
     t_a_failed_endpoint_is_disclosed_not_hidden()
     print()
     if FAILS:

@@ -78,25 +78,44 @@ def _repo_slug(explicit=''):
     return m.group(1)
 
 
-def _api(slug, path, token=''):
+def _api(slug, path, token='', paginate=False):
     """GET one API path. Returns (payload, error) -- never raises.
 
     A failing endpoint must not cost the ones that work: traffic needs PUSH
     access while releases are public, so a token without it should still bank
     the release history rather than losing the whole run. The error travels to
     the page, because a silently absent series looks exactly like a quiet week.
+
+    `paginate` is NOT optional for a list endpoint, and the first CI run proved
+    why: this path returned page 1 only -- 30 of 39 releases -- while the local
+    `gh --paginate` fallback returned all of them. The two fronts silently
+    disagreed, and the CI answer would have dropped the nine oldest releases
+    (and their lifetime PCM installs) out of the archive, looking for all the
+    world like a real decline.
     """
-    url = f'https://api.github.com/repos/{slug}/{path}'
     tok = token or os.environ.get('GITHUB_TOKEN') or os.environ.get('GH_TOKEN') or ''
     if tok:
-        req = urllib.request.Request(url, headers={
-            'Authorization': f'Bearer {tok}',
-            'Accept': 'application/vnd.github+json',
-            'User-Agent': 'KiCadRoutingTools-metrics',
-        })
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.loads(r.read().decode()), ''
+            out, page = [], 1
+            while True:
+                sep = '&' if '?' in path else '?'
+                url = (f'https://api.github.com/repos/{slug}/{path}'
+                       + (f'{sep}per_page=100&page={page}' if paginate else ''))
+                req = urllib.request.Request(url, headers={
+                    'Authorization': f'Bearer {tok}',
+                    'Accept': 'application/vnd.github+json',
+                    'User-Agent': 'KiCadRoutingTools-metrics',
+                })
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    chunk = json.loads(r.read().decode())
+                if not paginate or not isinstance(chunk, list):
+                    return chunk, ''
+                out.extend(chunk)
+                # A short page is the last page. Also stop on an absurd number
+                # of pages rather than looping forever on a misbehaving API.
+                if len(chunk) < 100 or page >= 50:
+                    return out, ''
+                page += 1
         except urllib.error.HTTPError as e:
             err = f'HTTP {e.code}'
         except Exception as e:                                # pragma: no cover
@@ -169,6 +188,7 @@ def _merge_daily(store, key, rows):
 def collect(slug, token=''):
     stamp = _today()
     errors = {}
+    collected = []
 
     traffic = _load('traffic_daily.json', {})
     for ep, key in (('traffic/views', 'views'), ('traffic/clones', 'clones')):
@@ -177,6 +197,7 @@ def collect(slug, token=''):
             errors[ep] = err or 'unexpected payload'
             continue
         n = _merge_daily(traffic, key, payload.get(key))
+        collected.append(ep)
         print(f'  {ep}: {n} day(s) new/updated')
     _save('traffic_daily.json', traffic)
 
@@ -189,9 +210,10 @@ def collect(slug, token=''):
         store = _load(fname, {})
         store[stamp] = payload
         _save(fname, store)
+        collected.append(ep)
         print(f'  {ep}: {len(payload)} row(s) snapshotted')
 
-    payload, err = _api(slug, 'releases', token)
+    payload, err = _api(slug, 'releases', token, paginate=True)
     if err or not isinstance(payload, list):
         errors['releases'] = err or 'unexpected payload'
     else:
@@ -205,6 +227,7 @@ def collect(slug, token=''):
             }
         store[stamp] = snap
         _save('releases.json', store)
+        collected.append('releases')
         print(f'  releases: {len(snap)} release(s) snapshotted')
 
     meta = _load('meta.json', {})
@@ -216,7 +239,7 @@ def collect(slug, token=''):
         print('  WARN endpoints that failed (the page will say so):')
         for k, v in errors.items():
             print(f'    {k}: {v}')
-    return errors
+    return errors, collected
 
 
 # --------------------------------------------------------------- render
@@ -361,7 +384,22 @@ def _release_rollup(releases):
     """Latest snapshot -> per-release PCM / binary / total counts, newest first."""
     if not releases:
         return [], {}, {}
-    latest = releases[max(releases)]
+    # MAX ACROSS SNAPSHOTS, not the latest snapshot. A download counter only
+    # ever grows, so the largest value seen is the true one -- and reading the
+    # latest snapshot alone lets ONE short read (a rate limit mid-pagination, a
+    # token change, the un-paginated bug the first CI run shipped) silently cut
+    # the lifetime total and render it as a decline. Same discipline as the
+    # traffic merge, for the same reason. A deleted release keeps its last
+    # known counts, which is honest: those downloads did happen.
+    latest = {}
+    for stamp in sorted(releases):
+        for tag, rel in (releases[stamp] or {}).items():
+            cur = latest.setdefault(tag, {'published_at': rel.get('published_at', ''),
+                                          'assets': {}})
+            if rel.get('published_at'):
+                cur['published_at'] = rel['published_at']
+            for name, n in (rel.get('assets') or {}).items():
+                cur['assets'][name] = max(cur['assets'].get(name, 0), int(n))
     rows, plat_tot, pcm_tot = [], {}, {}
     for tag, rel in latest.items():
         assets = rel.get('assets', {})
@@ -643,17 +681,20 @@ def main():
     slug = _repo_slug(args.repo)
     stages = [s.strip() for s in args.only.split(',') if s.strip()]
     print(f'repo: {slug}')
-    errors = {}
+    errors, collected = {}, ['(not run)']
     if 'collect' in stages:
         print('=== COLLECT ===')
-        errors = collect(slug, args.token)
+        errors, collected = collect(slug, args.token)
     if 'render' in stages:
         print('=== RENDER ===')
         render(slug)
-    # A failed endpoint is reported and recorded, but does not fail the run:
-    # the archive that DID collect is worth committing, and the page says what
-    # is missing. Only a total loss is worth a non-zero exit.
-    return 1 if len(errors) >= 4 else 0
+    # A failed endpoint is reported, recorded and RENDERED -- but must not fail
+    # the run, because the publish step is downstream and a non-zero exit here
+    # kills the very page that carries the disclosure. The first CI run died
+    # exactly that way: four traffic 403s aborted the job after the page had
+    # been written correctly, so nobody could read what it said. Only a TOTAL
+    # loss -- nothing collected at all -- is worth a non-zero exit.
+    return 1 if errors and not collected else 0
 
 
 if __name__ == '__main__':
