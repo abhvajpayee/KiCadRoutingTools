@@ -3905,16 +3905,25 @@ def nudge_grazing_octolinear(results, pcb_data: PCBData, scope_net_ids=None,
     # only clear FOREIGN COPPER, so a bend could otherwise be pushed off-board /
     # across an Edge.Cuts cutout that the original A* route legally skirted
     # (lily58 Net-(LED10-DIN): a dogleg re-bent 1mm INTO a switch cutout, #256).
-    from check_drc import board_edge_geometry, _point_on_board, _segment_to_rings_distance
+    from check_drc import (board_edge_geometry, _point_on_board, _segment_to_rings_distance,
+                           npth_slot_capsules, segment_to_npth_slots_distance)
     edge_rings, edge_outer, edge_cutouts = board_edge_geometry(pcb_data.board_info)
     board_bounds = pcb_data.board_info.board_bounds
     # #438: honor the board's own copper-edge rule (0.5mm on strict boards), not
     # the flat routing clearance -- a re-bend must not re-open the edge band the
     # base A* map kept clear.
     _edge_clr = max(clearance, board_edge_clearance)
+    # An NPTH SLOT is milled board edge, not a drill (#448): KiCad grades copper
+    # against a slot wall at copper_edge_clearance, ABOVE the NPTH-to-track floor
+    # the hole term applies, and Edge.Cuts rings do not contain these. Geometry
+    # and distance both come from check_drc so a copper-moving pass and the
+    # checker cannot disagree about what counts as an edge (sofle_pico SW25).
+    _slot_caps = npth_slot_capsules(pcb_data)
 
     def edge_clears(x1, y1, x2, y2, w):
         required = _edge_clr + w / 2.0 - 1e-4
+        if segment_to_npth_slots_distance(_slot_caps, x1, y1, x2, y2) < required:
+            return False
         if edge_rings:
             if not _point_on_board(x1, y1, edge_outer, edge_cutouts) or \
                not _point_on_board(x2, y2, edge_outer, edge_cutouts):
@@ -4161,7 +4170,8 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
                                       _seg_foreign_via_dist, _seg_foreign_hole_dist)
     from routing_defaults import NPTH_TO_TRACK_CLEARANCE
     from check_drc import (board_edge_geometry, _point_on_board,
-                           _segment_to_rings_distance, point_to_pad_distance)
+                           _segment_to_rings_distance, point_to_pad_distance,
+                           npth_slot_capsules, segment_to_npth_slots_distance)
     from connectivity import COINCIDENCE_TOL
 
     npth_clr = max(clearance, NPTH_TO_TRACK_CLEARANCE)
@@ -4194,9 +4204,20 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
     edge_rings, edge_outer, edge_cutouts = board_edge_geometry(pcb_data.board_info)
     board_bounds = pcb_data.board_info.board_bounds
     _edge_clr = max(clearance, board_edge_clearance)
+    # An NPTH SLOT is milled board edge, not a drill (#448) -- KiCad grades
+    # copper against a slot wall at copper_edge_clearance, which is normally
+    # ABOVE the NPTH-to-track floor the hole term below applies. Edge.Cuts
+    # rings do not contain these, so without this the only floor a slot got
+    # here was the lower one, and a shortcut could legally sit inside the
+    # clearance the grader enforces (sofle_pico SW25: straightened 0.1mm in,
+    # legal at 0.325mm, graded at 0.425mm). Geometry comes from check_drc so
+    # the two cannot disagree about what counts as an edge.
+    _slot_caps = npth_slot_capsules(pcb_data)
 
     def edge_clears(x1, y1, x2, y2, w):
         required = _edge_clr + w / 2.0 - 1e-4
+        if segment_to_npth_slots_distance(_slot_caps, x1, y1, x2, y2) < required:
+            return False
         if edge_rings:
             if not _point_on_board(x1, y1, edge_outer, edge_cutouts) or \
                not _point_on_board(x2, y2, edge_outer, edge_cutouts):
@@ -5452,13 +5473,22 @@ def nudge_grazing_microshift(results, pcb_data: PCBData, scope_net_ids=None,
         for s in r.get('new_segments') or []:
             routed_seg_result[id(s)] = r
 
-    from check_drc import board_edge_geometry, _point_on_board, _segment_to_rings_distance
+    from check_drc import (board_edge_geometry, _point_on_board, _segment_to_rings_distance,
+                           npth_slot_capsules, segment_to_npth_slots_distance)
     edge_rings, edge_outer, edge_cutouts = board_edge_geometry(pcb_data.board_info)
     board_bounds = pcb_data.board_info.board_bounds
     _edge_clr = max(clearance, board_edge_clearance)  # #438 honor board edge rule
+    # An NPTH SLOT is milled board edge, not a drill (#448): KiCad grades copper
+    # against a slot wall at copper_edge_clearance, ABOVE the NPTH-to-track floor
+    # the hole term applies, and Edge.Cuts rings do not contain these. Geometry
+    # and distance both come from check_drc so a copper-moving pass and the
+    # checker cannot disagree about what counts as an edge (sofle_pico SW25).
+    _slot_caps = npth_slot_capsules(pcb_data)
 
     def edge_clears(x1, y1, x2, y2, w):
         required = _edge_clr + w / 2.0 - 1e-4
+        if segment_to_npth_slots_distance(_slot_caps, x1, y1, x2, y2) < required:
+            return False
         if edge_rings:
             if not _point_on_board(x1, y1, edge_outer, edge_cutouts) or \
                not _point_on_board(x2, y2, edge_outer, edge_cutouts):

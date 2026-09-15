@@ -1524,6 +1524,71 @@ def check_via_board_edge(via: Via, board_bounds: Tuple[float, float, float, floa
 # the bbox and is never flagged. These helpers measure to the actual Edge.Cuts
 # outline (outer ring + interior cutouts), matching KiCad's copper_edge_clearance.
 
+def npth_slot_capsules(pcb_data):
+    """Every NPTH SLOT on the board, as (p1, p2, radius, "REF.PAD") capsules.
+
+    An NPTH slot (a milled oval) IS board edge to KiCad (#448): its edge
+    provider grades copper proximity to a slot's hole wall as
+    `copper_edge_clearance`, while a ROUND NPTH drill stays in the
+    hole_clearance / copper-to-hole domain. Verified with kicad-cli 10 probes
+    on sofle_pico: a track 0.22mm from the SW25 2.8x1.5 slot flags
+    copper_edge_clearance; the same track 0.10mm from a round 3.0mm NPTH flags
+    nothing.
+
+    This lives here, next to `board_edge_geometry`, because a consumer that
+    keeps copper off the board edge must keep it off these too -- at the EDGE
+    floor, which is typically higher than the NPTH-to-track floor. The
+    octolinear smoother mirrored the geometry with only the NPTH floor and
+    straightened a sofle_pico track 0.1mm closer to SW25's slot: legal at
+    `max(clearance, NPTH_TO_TRACK_CLEARANCE)` = 0.325mm, graded against
+    `max(clearance, board_edge_clearance)` = 0.425mm, shipped 0.350mm. One
+    source of the geometry, so the generator and the checker cannot disagree
+    about what counts as an edge.
+    """
+    caps = []
+    from kicad_parser import pad_drill_capsule as _pdc
+    for fp in pcb_data.footprints.values():
+        for pd in fp.pads:
+            if getattr(pd, 'pad_type', '') != 'np_thru_hole' or pd.drill <= 0:
+                continue
+            (p1, p2, r) = _pdc(pd)
+            if math.hypot(p2[0] - p1[0], p2[1] - p1[1]) <= 1e-9:
+                continue  # round drill: not part of the milled edge
+            caps.append((p1, p2, r, f"{pd.component_ref}.{pd.pad_number}"))
+    return caps
+
+
+def segment_to_npth_slots_distance(slot_caps, x1, y1, x2, y2):
+    """Distance from a track CENTRELINE to the nearest NPTH slot WALL.
+
+    `slot_caps` comes from `npth_slot_capsules`. Returns +inf when the board
+    has no slots, so a caller can compare unconditionally. A caller keeping a
+    track legal wants `>= board_edge_clearance + width / 2`, because a slot is
+    milled edge (see `npth_slot_capsules`) -- not the NPTH-to-track floor.
+    """
+    if not slot_caps:
+        return float('inf')
+    from geometry_utils import closest_point_on_segment, segments_intersect
+    best = float('inf')
+    for (p1, p2, r, _ref) in slot_caps:
+        if segments_intersect(x1, y1, x2, y2, p1[0], p1[1], p2[0], p2[1]):
+            d = 0.0
+        else:
+            d = float('inf')
+            for (px, py, qx1, qy1, qx2, qy2) in (
+                    (x1, y1, p1[0], p1[1], p2[0], p2[1]),
+                    (x2, y2, p1[0], p1[1], p2[0], p2[1]),
+                    (p1[0], p1[1], x1, y1, x2, y2),
+                    (p2[0], p2[1], x1, y1, x2, y2)):
+                cx, cy = closest_point_on_segment(px, py, qx1, qy1, qx2, qy2)
+                dd = math.hypot(px - cx, py - cy)
+                if dd < d:
+                    d = dd
+        if d - r < best:
+            best = d - r
+    return best
+
+
 def board_edge_geometry(board_info) -> Tuple[List[List[Tuple[float, float]]],
                                              Optional[List[Tuple[float, float]]],
                                              List[List[Tuple[float, float]]]]:
@@ -3383,17 +3448,7 @@ def run_drc(pcb_file: str, clearance: float = 0.1, net_patterns: Optional[List[s
         # same effective edge clearance, with EXACT capsule distance -- these
         # breaches are often a few um (sofle SW25A: 13.5um under the 0.3 rule),
         # so ring sampling error would swallow them.
-        _slot_caps = []
-        from kicad_parser import pad_drill_capsule as _pdc
-        for _fp in pcb_data.footprints.values():
-            for _pd in _fp.pads:
-                if getattr(_pd, 'pad_type', '') != 'np_thru_hole' or _pd.drill <= 0:
-                    continue
-                (_s1, _s2, _sr) = _pdc(_pd)
-                if math.hypot(_s2[0] - _s1[0], _s2[1] - _s1[1]) <= 1e-9:
-                    continue  # round drill: not part of the milled edge
-                _slot_caps.append((_s1, _s2, _sr,
-                                   f"{_pd.component_ref}.{_pd.pad_number}"))
+        _slot_caps = npth_slot_capsules(pcb_data)
         if _slot_caps and pcb_data.segments:
             # Reuse the copper-to-hole check's per-segment arrays when it ran
             # (slots are NPTH pads, so they are always in its holes list);
