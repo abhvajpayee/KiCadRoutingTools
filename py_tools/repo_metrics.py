@@ -275,6 +275,45 @@ def _bars(rows, unit=''):
     return ''.join(out)
 
 
+def clone_character(traffic, releases):
+    """Per-day clones, unique cloners, and clones-per-unique.
+
+    THE QUESTION THIS ANSWERS BADLY, AND WHY IT IS STILL THE BEST AVAILABLE.
+    GitHub's clones endpoint returns a count and a unique count. No user agent,
+    no IP, no actor -- so "was that a person?" cannot be answered, only
+    estimated, and any page claiming a true human count is lying.
+
+    `uniques` is the closest proxy, because a person clones once or twice while
+    an automated fetcher clones repeatedly from few addresses: the RATIO
+    count/uniques is therefore an automation index, low (~1.4) on ordinary days
+    and high on machine days. Measured here, 2026-09-04 -- the v0.22.0 release
+    day -- ran 528 clones at 4.26 per unique while VIEWS stayed flat at 281,
+    against a 1.4-1.9 baseline.
+
+    That day is also the measurement that killed the obvious refinement.
+    Subtracting this project's own CI looks principled, and is worthless: the
+    release run had SEVEN jobs, so ~7 checkouts against a ~300-clone excess.
+    The spike is other people's machines -- downstream CI, mirrors, release
+    trackers -- which no API here can identify. So the ratio is disclosed and
+    left uncorrected rather than adjusted by a number that explains 1% of it.
+    """
+    clones = traffic.get('clones', {})
+    views = traffic.get('views', {})
+    rel_days = set()
+    for snap in releases.values():
+        for rel in snap.values():
+            if rel.get('published_at'):
+                rel_days.add(rel['published_at'][:10])
+    rows = []
+    for day in sorted(clones)[-14:]:
+        c = clones[day]
+        ratio = c['count'] / max(1, c['uniques'])
+        rows.append({'date': day, 'count': c['count'], 'uniques': c['uniques'],
+                     'ratio': ratio, 'views': views.get(day, {}).get('count', 0),
+                     'release': day in rel_days})
+    return rows
+
+
 def _release_rollup(releases):
     """Latest snapshot -> per-release PCM / binary / total counts, newest first."""
     if not releases:
@@ -369,6 +408,14 @@ def render(slug):
                     f'than a quiet week:<ul>{items}</ul>'
                     f'The traffic endpoints need a token with push access.</div>')
 
+    char_rows = clone_character(traffic, releases)
+    char_html = ''.join(
+        f'<tr><th>{_esc(r["date"])}{" ●" if r["release"] else ""}</th>'
+        f'<td class="num">{r["count"]:,}</td><td class="num">{r["uniques"]:,}</td>'
+        f'<td class="num{" hot" if r["ratio"] >= 3 else ""}">{r["ratio"]:.2f}</td>'
+        f'<td class="num">{r["views"]:,}</td></tr>' for r in char_rows)
+    peak = max(char_rows, key=lambda r: r['ratio']) if char_rows else None
+
     chart = _line_chart([
         {'label': 'views', 'points': {d: v['count'] for d, v in views.items()},
          'color': '#3b82f6'},
@@ -412,6 +459,7 @@ th {{ font-weight:600 }}
 .key i {{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px }}
 .key {{ margin-right:14px }}
 .muted {{ color:var(--muted) }}
+.hot {{ color:#c2410c; font-weight:600 }}
 .note {{ background:var(--card); border:1px solid var(--line); border-left:3px solid var(--muted);
   border-radius:0 8px 8px 0; padding:12px 16px; font-size:.88rem; color:var(--muted) }}
 .warn {{ background:var(--warn); border:1px solid var(--line); border-radius:8px;
@@ -435,6 +483,30 @@ rebuilt weekly from GitHub's API</p>
 unique count per day, and the same person on two days counts twice in any sum
 of them — so the card above says “unique-days”, not “people”. Only the daily
 figures are true uniques.</p>
+
+<h2>Manual vs automated clones</h2>
+<div class="wrap"><table>
+<tr><th>day (● = release)</th><th class="num">clones</th><th class="num">unique</th>
+<th class="num">per unique</th><th class="num">views</th></tr>
+{char_html or '<tr><td colspan="5" class="muted">no data yet</td></tr>'}
+</table></div>
+<p class="note"><strong>There is no way to count human clones, only to
+estimate them.</strong> GitHub reports a count and a unique count and nothing
+else — no user agent, no IP, no actor — so any figure here claiming to be
+“people” would be invented. <strong>Unique cloners is the closest proxy</strong>,
+because a person clones once or twice while an automated fetcher clones
+repeatedly from few addresses; the ratio is therefore an automation index, not
+a headcount. Ordinary days sit near 1.4–1.9.
+{f'The peak in this window is <strong>{peak["ratio"]:.2f}</strong> on {_esc(peak["date"])}'
+ + (' — a release day' if peak['release'] else '')
+ + f', at {peak["count"]:,} clones against only {peak["views"]:,} views: machines, not readers.'
+ if peak else ''}
+This project's own CI is <em>not</em> the explanation and is not subtracted:
+a release run is seven jobs, so about seven checkouts against a spike of
+several hundred. The excess is other people's automation — downstream CI,
+mirrors, release trackers — which no API available here can identify, so it is
+disclosed rather than adjusted by a correction that would explain about 1% of
+it.</p>
 
 <h2>Downloads per release</h2>
 <div class="wrap"><table>

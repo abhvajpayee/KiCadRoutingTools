@@ -125,6 +125,34 @@ def t_page_discloses_what_the_numbers_are_not():
           'a download is not a run' in flat.lower())
     check('t_page_names_its_own_ci_as_a_confound',
           'own ci' in flat.lower())
+    # The clone question is the one most likely to be "simplified" into a
+    # headcount by a later edit, because a headcount is what everyone wants.
+    check('t_page_refuses_to_claim_a_human_clone_count',
+          'no way to count human clones' in flat.lower()
+          and 'closest proxy' in flat.lower())
+
+
+def t_clone_character_is_a_ratio_not_a_headcount():
+    """The automation index, and the release day it is keyed to."""
+    traffic = {'clones': {'2026-09-03': {'count': 98, 'uniques': 45},
+                          '2026-09-04': {'count': 528, 'uniques': 124}},
+               'views': {'2026-09-04': {'count': 281, 'uniques': 81}}}
+    releases = {'2026-09-15': {'v0.22.0': {
+        'published_at': '2026-09-04T00:00:00Z', 'assets': {}}}}
+    rows = M.clone_character(traffic, releases)
+    by = {r['date']: r for r in rows}
+    spike, quiet = by['2026-09-04'], by['2026-09-03']
+    check('t_clone_ratio_separates_a_machine_day',
+          round(spike['ratio'], 2) == 4.26 and round(quiet['ratio'], 2) == 2.18
+          and spike['ratio'] > quiet['ratio'],
+          f"spike {spike['ratio']:.2f} vs quiet {quiet['ratio']:.2f}")
+    check('t_release_days_are_marked',
+          spike['release'] is True and quiet['release'] is False)
+    # No row may claim to be a count of people: the keys are what GitHub gave
+    # plus a derived ratio, and nothing named `humans`/`manual`.
+    check('t_no_row_invents_a_human_count',
+          not ({'humans', 'manual', 'people'} & set(spike)),
+          f"keys={sorted(spike)}")
 
 
 def t_a_failed_endpoint_is_disclosed_not_hidden():
@@ -146,6 +174,7 @@ def main():
     t_merge_keeps_the_max_per_date()
     t_pcm_and_binaries_are_counted_apart()
     t_page_discloses_what_the_numbers_are_not()
+    t_clone_character_is_a_ratio_not_a_headcount()
     t_a_failed_endpoint_is_disclosed_not_hidden()
     print()
     if FAILS:
