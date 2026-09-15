@@ -2603,7 +2603,8 @@ def batch_route(input_file: str, output_file: str, net_names: List[str],
         if not _ckpt_stop:
             from rip_up_reroute import (rip_up_net as _pe_rip,
                                         restore_net as _pe_restore,
-                                        _saved_route_collides as _pe_collides)
+                                        _saved_route_collides as _pe_collides,
+                                        _saved_route_colliders as _pe_colliders)
             for _rid in sorted(_pe_ripped_reg):
                 _r_pe = routed_results.get(_rid)
                 if _r_pe is None or _r_pe.get('is_existing_route'):
@@ -2617,7 +2618,52 @@ def batch_route(input_file: str, output_file: str, net_names: List[str],
                     continue  # reroute genuinely landed
                 if _pe_collides(_orig_pe[0], pcb_data, [_rid],
                                 config.clearance):
-                    continue  # corridor taken; keep partial, report below
+                    # The corridor was taken while this victim was ripped --
+                    # but WHOSE copper took it decides whether that matters.
+                    # Copper belonging to a net that is ITSELF still open is a
+                    # partial reroute connecting nothing, so protecting it
+                    # costs a fully connected restore and buys not one pad.
+                    #
+                    # watchy shipped exactly that cascade: SDA ripped BTN3,
+                    # BTN3 ripped EN, both victims rerouted PARTIAL, and EN's
+                    # intact original was refused because BTN3's worthless
+                    # partial sat in its corridor. Two nets lost to gain one.
+                    # The tap rip-up path has had this accounting since #310
+                    # ("lost N pad(s) to gain M; abandoning tap"); the
+                    # pre-existing path never got it.
+                    #
+                    # Deliberately narrow: EVERY blocker must be a
+                    # pre-existing victim that is still disconnected. One
+                    # connected net holding the corridor and the restore stays
+                    # refused, exactly as before.
+                    _blk = {getattr(_o, 'net_id', None) for _k, _o in
+                            _pe_colliders(_orig_pe[0], pcb_data, [_rid],
+                                          config.clearance)}
+                    _blk.discard(None)
+                    _blk.discard(_rid)
+                    _worthless = {_b for _b in _blk
+                                  if _b in _pe_ripped_reg
+                                  and not _pe_connected(_b)}
+                    if not _blk or _worthless != _blk:
+                        continue  # a CONNECTED net holds it -- keep partial
+                    for _b in sorted(_worthless):
+                        _, _, _wir_b = _pe_rip(
+                            _b, pcb_data, routed_net_ids, routed_net_paths,
+                            routed_results, state.diff_pair_by_net_id,
+                            remaining_net_ids, results, config,
+                            track_proximity_cache, state.working_obstacles,
+                            state.net_obstacles_cache,
+                            state.ripped_route_layer_costs,
+                            state.ripped_route_via_positions, layer_map)
+                        if _wir_b:
+                            successful -= 1
+                        print(f"  Pre-existing victim "
+                              f"'{_pe_ripped_reg[_rid]}': cleared "
+                              f"'{_pe_ripped_reg.get(_b, _b)}' partial copper "
+                              f"(it connects nothing) to free the corridor")
+                    if _pe_collides(_orig_pe[0], pcb_data, [_rid],
+                                    config.clearance):
+                        continue  # something else holds it after all
                 _, _, _wir_par = _pe_rip(
                     _rid, pcb_data, routed_net_ids, routed_net_paths,
                     routed_results, state.diff_pair_by_net_id,
