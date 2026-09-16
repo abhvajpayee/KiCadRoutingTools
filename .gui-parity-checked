@@ -1,3 +1,98 @@
+009a8cf0 2026-09-16 -- FIRST TOKEN OF THIS FILE MUST BE THE AUDITED SHA.
+Audit c44f623f..009a8cf0 on main (71 commits: the v0.22.0 -> HEAD routing
+regression campaign, plus the upstream #966/#967 clearance work). NO GAP FOUND.
+Eight gates green, run live on this machine.
+
+READ THIS RANGE RIGHT: it is almost entirely ROUTING-ENGINE repair, and that is
+WHY every parity number below is unchanged. Seven engine fixes landed --
+`207f8217` (#874 via sync dropping shipped layer-swap vias), `59ba5f78` (NPTH
+slot is board edge to the copper-movers), `8531f4a3` (#441 ring-uncovered plated
+drills are holes to the movers), `24e93d87` (#521/#906 half a pair is not a
+protected pair), `d8bfcf1c` (#958 no equal-length rearrangement in a fine-pitch
+field), plus `b5a20c96` reverting an earlier cut of that last one and two
+test/baseline re-records. EVERY ONE of them lands inside batch_route /
+batch_route_diff_pairs or in a SHARED module both fronts call:
+
+    routing_common.sync_pcb_data_segments   (both callers ARE the two engine
+                                             functions, so the #874 keep-alive
+                                             is passed on both fronts)
+    pcb_modification.smooth_octolinear_chains + the two grazing nudges
+    single_ended_routing._foreign_hole_capsules
+    check_drc.npth_slot_capsules / segment_to_npth_slots_distance
+    route_diff.protection_candidates
+
+Not one is a CLI main() post-pass, which is the Class-2 drift this file exists
+to catch. That is the shape both fronts inherit for free -- and the numbers
+below say so mechanically rather than on the auditor's say-so.
+
+THE SURFACE, checked mechanically, not assumed:
+
+  * NEW CLI FLAGS on the routing CLIs: ZERO. (add_argument diff over route.py,
+    route_diff.py, route_planes.py, repair_planes.py, bga_fanout, qfn_fanout is
+    EMPTY.) So FLAG_PARAMS needs no entry and the plan-parity gate is unmoved.
+  * ENGINE KWARGS at the front-end boundary: ZERO drift, compared by AST on
+    BOTH revisions with the non-vacuity assert -- batch_route 101 -> 101,
+    batch_route_diff_pairs 89 -> 89, create_plane 46 -> 46,
+    generate_bga_fanout 27 -> 27, generate_qfn_fanout 16 -> 16, and the
+    parameter NAMES are identical on all five.
+    THE NON-VACUITY ASSERT EARNED ITS KEEP AGAIN, differently this time: the
+    probe first read generate_qfn_fanout as MISSING on BOTH revisions, because
+    the function lives in `qfn_fanout/__init__.py` and the probe looked in
+    `qfn_fanout.py`. MISSING on both sides subtracts to "no change" and would
+    have been recorded as parity. Only the per-function count, printed and
+    compared against this file's previous entry (16), caught it.
+  * DEFAULT DRIFT: ZERO. routing_defaults.py diff over the range is EMPTY.
+  * NEW DIALOG CONTROL: none. settings_persistence.py diff over the range is
+    EMPTY. Round-trip gate: 191 keys, the same count as the previous entry.
+  * NEW results_data KEYS on a routing engine: none.
+  * GUI-SIDE CHANGES IN RANGE: two commits, `a29856f0` and `e5681428`, both the
+    #966/#967 unset-clearance resolution -- and both are parity FIXES, made on
+    the GUI front to match the CLIs' rule (a declared 0 is UNSET; an absent
+    class value uses the same constant the CLIs use). They close drift rather
+    than create it.
+
+GATES, all run live here (KiCad python CHECKED first, not assumed --
+pcbnew 10.0.0-103-gacbf1898e0, wx 4.2.2a1 osx-cocoa / wxWidgets 3.2.8):
+
+    test_manifest_plan_parity          PASS   (no wx)
+    test_cli_postpass_coverage         PASS   (no wx) -- no new CLI-only pass
+    test_settings_roundtrip            PASS   191 keys, save/restore/legacy/re-save
+    test_714_mirror_pcbnew_parity      PASS   every fixture matches pcbnew's flip
+    test_fanout_rotated_gui            PASS   10/10; CLI and GUI both 104/104
+                                              matched escapes outward, 0 inward
+    test_gui_livechain_rp2350          PASS   both chains clean at every stage
+    test_gui_engine_parity             PARITY copper sets IDENTICAL --
+                                              segments CLI 1078 = GUI 1078,
+                                              vias CLI 128 = GUI 128, 0 on
+                                              either side only; conn 0 issues
+                                              and drc 0 on both
+    run_all.py --fast                  428 passed / 0 failed / 196 skipped
+
+A NOTE ON SHAs IN THIS FILE. Every one above was rewritten once already: the
+entry was written, then `main` was pulled and the 19 unpushed commits REBASED
+onto an upstream metrics commit, which gave all of them new hashes. The file
+then cited six commits that existed only as pre-rebase orphans -- `git cat-file`
+still resolves those, so a spot check says "commit" and passes. The test that
+actually catches it is ANCESTRY:
+
+    git merge-base --is-ancestor <sha> HEAD
+
+Run that over every sha in this entry before trusting it, and note that the A/B
+ARM NAME (head2-kc_0ae450de) is deliberately NOT a branch sha -- it names a
+directory on the Modal results volume, fixed at launch time, and must not be
+"corrected" to match.
+
+WHAT THIS AUDIT DOES NOT COVER, said plainly: the engine changes above are
+justified on one or two boards each and the CORPUS A/B that judges them was
+still running when this was written (arm head2-kc_0ae450de, sets 1-5 -- that
+arm name carries the PRE-REBASE sha of the same tree, because the run was
+launched before `main` was pulled; 009a8cf0 is where that content now sits).
+Parity
+means the two fronts do the SAME thing; it is not a claim that the thing is
+right. Two boards in this range are attributed and deliberately NOT fixed
+(picodvi, core1106_cam -> issue #677), and one regression is documented and
+unfixed (smartknob_base, a GND soft joint from the #908 chain).
+
 c44f623f 2026-09-12 -- FIRST TOKEN OF THIS FILE MUST BE THE AUDITED SHA.
 Audit a65194fb..c44f623f on main (272 commits, PRs #884/#885/#886/#888/#889/
 #911/#912/#913/#914/#915/#917/#927/#931/#932/#934/#935/#938/#939/#940/#943/
