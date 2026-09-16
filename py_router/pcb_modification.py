@@ -3812,6 +3812,11 @@ def prune_grazing_segments(results, pcb_data: PCBData, scope_net_ids=None,
 # _SMOOTH_DEGENERATE_LEG mm is neither emitted nor counted.
 _SMOOTH_TIE_TOL = 1e-9
 _SMOOTH_DEGENERATE_LEG = 1e-5
+#: A pad array at or below this pitch is a FINE-PITCH FIELD: the space between
+#: its pads is escape corridor, not spare room. #958's equal-length tie-break
+#: does not rearrange copper inside one (see smooth_octolinear_chains). Covers
+#: BGA, QFP and QFN alike -- pitch is what makes the space a corridor.
+_SMOOTH_DENSE_PITCH_MM = 0.8
 
 
 def _octolinear_bends(A, B):
@@ -4228,6 +4233,46 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
             return all(min(x - min_x, max_x - x, y - min_y, max_y - y) >= required
                        for x, y in ((x1, y1), (x2, y2)))
         return True
+
+    # FINE-PITCH PAD FIELDS, from the board's OWN helpers -- `detect_bga_pitch`
+    # and `get_footprint_bounds`, the two `auto_detect_bga_exclusion_zones` is
+    # itself built from. A dense field's inter-pad space is escape corridor: the
+    # only way out for a pad that still needs one.
+    #
+    # Keyed on PITCH, not on the package name. `find_components_by_type('BGA')`
+    # is the obvious reuse and it is the wrong set here: ft2232h_jtag's U4 --
+    # the part whose corridor this fix exists for -- is
+    # `Package_QFP:LQFP-64_10x10mm_P0.5mm`, so `detect_package_type` calls it
+    # QFP and the BGA filter returns nothing. (Its log line "BGA Grid Analysis
+    # for U4" is the FANOUT's grid analyser, which runs on any candidate and
+    # finds a pitch in a QFP's peripheral rows.) What makes the space a corridor
+    # is the pitch, not the ball/lead distinction, so a 0.5mm QFP and a 0.65mm
+    # BGA both qualify and ottercast's 0.2mm QFN does too.
+    #
+    # A static REGION deliberately, not "pads that currently lack copper": that
+    # set changes on every route pass, so a guard keyed on it fires differently
+    # each lap. Measured -- an earlier cut keyed on waiting pads and
+    # destabilised ottercast_audio's five-pass chain (2 -> 4 nets incomplete)
+    # while fixing ft2232h_jtag. A package does not move between passes.
+    _dense_boxes = []
+    try:
+        from kicad_parser import detect_bga_pitch, get_footprint_bounds
+        for _fp in pcb_data.footprints.values():
+            if len([q for q in _fp.pads
+                    if getattr(q, 'pad_type', '') != 'np_thru_hole']) < 16:
+                continue
+            if detect_bga_pitch(_fp) > _SMOOTH_DENSE_PITCH_MM:
+                continue
+            _dense_boxes.append(get_footprint_bounds(_fp, margin=0.0))
+    except Exception:
+        _dense_boxes = []
+
+    def _in_dense_field(x1, y1, x2, y2):
+        for (bx0, by0, bx1, by1) in _dense_boxes:
+            if (min(x1, x2) <= bx1 and max(x1, x2) >= bx0
+                    and min(y1, y2) <= by1 and max(y1, y2) >= by0):
+                return True
+        return False
 
     # Foreign-net POURS are deliberately NOT consulted (same convention as
     # routing itself, which is pour-blind): a shortcut inside a foreign pour
@@ -4670,11 +4715,44 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
                                         lengths = [math.hypot(b[0] - a[0], b[1] - a[1])
                                                    for a, b in zip(pts, pts[1:])]
                                         new_len = sum(lengths)
-                                        if new_len > sub_len - min_gain and not (
-                                                allow_tie
-                                                and abs(new_len - sub_len) <= _SMOOTH_TIE_TOL
-                                                and sum(d > _SMOOTH_DEGENERATE_LEG
-                                                        for d in lengths) < j - i):
+                                        _is_tie = (allow_tie
+                                                   and abs(new_len - sub_len) <= _SMOOTH_TIE_TOL
+                                                   and sum(d > _SMOOTH_DEGENERATE_LEG
+                                                           for d in lengths) < j - i)
+                                        if new_len > sub_len - min_gain and not _is_tie:
+                                            continue
+                                        # No EQUAL-LENGTH rearrangement inside a
+                                        # FINE-PITCH pad field (#958 + this).
+                                        #
+                                        # Straightening does not add copper -- it
+                                        # MOVES it. A staircase hugs its own
+                                        # corner; the diagonal replacing it cuts
+                                        # across, sweeping through the space the
+                                        # steps left open. Between 0.5mm-pitch
+                                        # balls that space is the escape corridor
+                                        # for a pad that still needs one, and
+                                        # BOTH variants are DRC-legal, so
+                                        # clears() cannot choose between them. A
+                                        # tie buys one fewer leg; it must not buy
+                                        # it there.
+                                        #
+                                        # Measured on ft2232h_jtag, +1V8 under
+                                        # U4's 18x18 0.5mm BGA -- 3.8728mm either
+                                        # way, 3 legs vs 2:
+                                        #   run at y=102.900  ->  run at y=102.600
+                                        # 0.15mm from where /OSCI's #666
+                                        # bare-ball escape drops its via. The
+                                        # dogbone failed, the rescue failed, and
+                                        # /OSCI shipped in two pieces.
+                                        #
+                                        # Strictly-shorter collapses are
+                                        # untouched, inside the field as well --
+                                        # those pay real length for the space,
+                                        # the trade #536 has always made.
+                                        if _is_tie and _dense_boxes and any(
+                                                _in_dense_field(pts[q][0], pts[q][1],
+                                                                pts[q + 1][0], pts[q + 1][1])
+                                                for q in range(len(pts) - 1)):
                                             continue
                                         if all(clears_m(pts[q][0], pts[q][1],
                                                         pts[q + 1][0], pts[q + 1][1])
