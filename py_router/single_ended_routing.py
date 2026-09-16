@@ -576,13 +576,30 @@ def _seg_foreign_via_dist(pcb_data, net_id, x1, y1, x2, y2, layer,
 
 
 def _foreign_hole_capsules(pcb_data):
-    """Cached NPTH (no-copper) drill capsules: (net_id, ax, ay, bx, by, r, lc)
-    numpy arrays, one row per pad whose drill carries no copper ring (mechanical
-    / mounting holes -- np_thru_hole, or a pad with no copper layer). The pad /
-    segment / via distance trio all measure to COPPER, so they never see these
-    holes; but a track crossing one is a real fab short (check_drc's track-hole
-    rule, issue #233), gated by the higher NPTH-to-track floor. Holes are
-    through, so the distance is layer-agnostic. Round drills degenerate to a
+    """Cached EXPOSED drill capsules: (net_id, ax, ay, bx, by, r, lc) numpy
+    arrays, one row per pad whose drill is not covered by its own copper ring.
+    Two populations:
+
+      * no copper at all -- np_thru_hole mechanical / mounting holes, or a pad
+        declaring no copper layer; and
+      * #441 RING-UNCOVERED PLATED pads, whose copper ring is SMALLER than their
+        drill (vfo_ctrl's U4 "MH": 0.001mm of copper over a 2.5mm drill). These
+        have copper, so `_pad_has_no_copper` is False and the copper distance
+        functions "see" them -- as a ~1um speck that keeps nothing off the real
+        2.5mm hole. They were therefore invisible to every caller of this
+        function: measured on vfo_ctrl, a board with FOUR 2.5mm mounting holes
+        reported 0 foreign-hole capsules, and a track through a hole centre
+        scored 1e9. Three tracks crossed U4.MH at v0.22.0 (one by 0.857mm,
+        clean through) and four at HEAD. check_drc grades this population
+        (its copper-to-hole branch names this pad) and
+        add_drill_hole_obstacles stamps it; this list is the third consumer and
+        was the one that did not, so the passes that MOVE copper could put it
+        back over a hole the router had kept clear.
+
+    The pad / segment / via distance trio all measure to COPPER, so they never
+    see these holes; but a track crossing one is a real fab short (check_drc's
+    track-hole rule, issue #233), gated by the higher NPTH-to-track floor. Holes
+    are through, so the distance is layer-agnostic. Round drills degenerate to a
     zero-length capsule (a=b). Rebuilt when the board's pad count changes (pads
     are static during routing, so this almost never refires).
 
@@ -601,12 +618,20 @@ def _foreign_hole_capsules(pcb_data):
         nid, ax, ay, bx, by, r, lc = [], [], [], [], [], [], []
         for pad_net, pads in pcb_data.pads_by_net.items():
             for pad in pads:
-                if (getattr(pad, 'drill', 0) or 0) > 0 and _pad_has_no_copper(pad):
-                    (p1x, p1y), (p2x, p2y), hr = pad_drill_capsule(pad)
-                    nid.append(pad_net)
-                    ax.append(p1x); ay.append(p1y); bx.append(p2x); by.append(p2y)
-                    r.append(hr)
-                    lc.append(getattr(pad, 'local_clearance', 0.0) or 0.0)
+                if (getattr(pad, 'drill', 0) or 0) <= 0:
+                    continue
+                # #441: ring-uncovered PLATED pads join the no-copper ones --
+                # same test add_drill_hole_obstacles and check_drc use, so the
+                # map, the grader and the movers agree on what an exposed drill
+                # is.
+                if not (_pad_has_no_copper(pad)
+                        or max(pad.size_x, pad.size_y) < pad.drill):
+                    continue
+                (p1x, p1y), (p2x, p2y), hr = pad_drill_capsule(pad)
+                nid.append(pad_net)
+                ax.append(p1x); ay.append(p1y); bx.append(p2x); by.append(p2y)
+                r.append(hr)
+                lc.append(getattr(pad, 'local_clearance', 0.0) or 0.0)
         cache = (sig, (np.asarray(nid, dtype=np.int64), np.asarray(ax, dtype=float),
                        np.asarray(ay, dtype=float), np.asarray(bx, dtype=float),
                        np.asarray(by, dtype=float), np.asarray(r, dtype=float),
