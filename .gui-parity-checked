@@ -1,15 +1,15 @@
-009a8cf0 2026-09-16 -- FIRST TOKEN OF THIS FILE MUST BE THE AUDITED SHA.
-Audit c44f623f..009a8cf0 on main (71 commits: the v0.22.0 -> HEAD routing
+f4fb38ed 2026-09-16 -- FIRST TOKEN OF THIS FILE MUST BE THE AUDITED SHA.
+Audit c44f623f..f4fb38ed on main (71 commits: the v0.22.0 -> HEAD routing
 regression campaign, plus the upstream #966/#967 clearance work). NO GAP FOUND.
 Eight gates green, run live on this machine.
 
 READ THIS RANGE RIGHT: it is almost entirely ROUTING-ENGINE repair, and that is
 WHY every parity number below is unchanged. Seven engine fixes landed --
-`207f8217` (#874 via sync dropping shipped layer-swap vias), `59ba5f78` (NPTH
-slot is board edge to the copper-movers), `8531f4a3` (#441 ring-uncovered plated
-drills are holes to the movers), `24e93d87` (#521/#906 half a pair is not a
-protected pair), `d8bfcf1c` (#958 no equal-length rearrangement in a fine-pitch
-field), plus `b5a20c96` reverting an earlier cut of that last one and two
+`18d5f162` (#874 via sync dropping shipped layer-swap vias), `bd930fd0` (NPTH
+slot is board edge to the copper-movers), `0b9acf90` (#441 ring-uncovered plated
+drills are holes to the movers), `ba9a25fa` (#521/#906 half a pair is not a
+protected pair), `4e6f8580` (#958 no equal-length rearrangement in a fine-pitch
+field), plus `cda2e933` reverting an earlier cut of that last one and two
 test/baseline re-records. EVERY ONE of them lands inside batch_route /
 batch_route_diff_pairs or in a SHARED module both fronts call:
 
@@ -70,8 +70,9 @@ pcbnew 10.0.0-103-gacbf1898e0, wx 4.2.2a1 osx-cocoa / wxWidgets 3.2.8):
 
 A NOTE ON SHAs IN THIS FILE. Every one above was rewritten once already: the
 entry was written, then `main` was pulled and the 19 unpushed commits REBASED
-onto an upstream metrics commit, which gave all of them new hashes. The file
-then cited six commits that existed only as pre-rebase orphans -- `git cat-file`
+onto an upstream metrics commit, and later main's history was REWRITTEN again to
+drop eight `metrics: weekly reach snapshot` bot commits -- each pass gave every
+commit a new hash. The file cited commits that existed only as orphans -- `git cat-file`
 still resolves those, so a spot check says "commit" and passes. The test that
 actually catches it is ANCESTRY:
 
@@ -86,7 +87,7 @@ WHAT THIS AUDIT DOES NOT COVER, said plainly: the engine changes above are
 justified on one or two boards each and the CORPUS A/B that judges them was
 still running when this was written (arm head2-kc_0ae450de, sets 1-5 -- that
 arm name carries the PRE-REBASE sha of the same tree, because the run was
-launched before `main` was pulled; 009a8cf0 is where that content now sits).
+launched before `main` was pulled; f4fb38ed is where that content now sits).
 Parity
 means the two fronts do the SAME thing; it is not a claim that the thing is
 right. Two boards in this range are attributed and deliberately NOT fixed
