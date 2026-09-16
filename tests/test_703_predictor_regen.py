@@ -65,6 +65,51 @@ sys.path.insert(0, os.path.join(ROOT, 'tests', 'stress'))
 #:
 #: MEASURED, from the run recorded in the pull request. Never predicted.
 #:
+#: RE-RECORDED 2026-09-15 (#908, the own-pad lift reaching Phase 3). The three
+#: `esp_prog` rows moved; `splitflap_driver:authored` did NOT. That split is the
+#: evidence for the cause rather than a story about it: esp_prog carries EIGHT
+#: footprint-copper segments (U2's SOT89 tab, the #908 population) and splitflap
+#: carries none, so a change to how footprint copper is modelled can only reach
+#: one of the two boards -- and only one moved.
+#:
+#: BISECTED over the #908 chain, one detached worktree per commit, running
+#: `--row esp_prog:portfolio-1` and parsing the LEFT of `got != want` (see the
+#: bisect note below -- the same trap was waiting):
+#:
+#:   f0838d2d  matches      (the last green commit)
+#:   b0016cc3  matches      #908 partial
+#:   5c00f277  matches      own-pad lift covers the via keep-out
+#:   ddd55b3c  matches      the lift could never remove anything (#422 static)
+#:   9272d942  35 -> 36 vias, 362.75 -> 364.33  <-- THE COMMIT
+#:   07412c06  36 -> 35 vias, 364.33 -> 362.75  (settles to the recorded value)
+#:
+#: `9272d942` is "the bake marker is per-MAP, PHASE 3 GETS THE LIFT, and a gate
+#: that pins it". Phase 3 is tap routing, which is where a multi-point net
+#: places its vias -- so a lift that newly applies there is exactly a change to
+#: the via count. `07412c06` (the short gate counted the tie as foreign) then
+#: nudges it back. Both are #908 doing MORE of what #908 is for.
+#:
+#:   esp_prog:authored            34/344.06/254 -> 34/336.58/250   better
+#:   esp_prog:perturb-scatter-d1  37/363.0/292  -> 38/361.26/296   mixed (+1 via)
+#:   esp_prog:portfolio-1         30/350.67/269 -> 35/362.75/282   WORSE (+5 vias)
+#:   splitflap_driver:authored    unmoved
+#:
+#: The direction is MIXED and one row is frankly worse, which is recorded here
+#: rather than rounded off -- there is precedent in the 2026-08-30 note below
+#: for a mixed re-record, and the same reasoning applies. `truth.headline` did
+#: not mismatch on ANY row (portfolio-1 stays at 1, and that 1 is a `drc` item,
+#: not `unrouted`/`broken`), so nothing became disconnected; the movement is in
+#: the quality tie-break only. portfolio-1 is the pathological row by
+#: construction -- the quench candidate that lands U2's SOT89 tab ON Q1's pads,
+#: as its own comment below already says -- so it is the row where freeing the
+#: tab's own copper has the most room to reroute, for better or worse.
+#:
+#: Re-recorded rather than treated as a defect because the lift is CORRECT: a
+#: footprint's own copper must not cage its own pads, on the tap path as much as
+#: anywhere else. If a later corpus A/B shows Phase 3 taps getting worse broadly
+#: -- not on one hand-perturbed candidate -- that is the signal to revisit, and
+#: this row is where it would show first.
+#:
 #: RE-RECORDED 2026-09-14 (#958, the smoother's second phase). `truth.quality`
 #: moved on all four rows, and in ONE column: `segments` fell everywhere while
 #: `vias` is identical on all four and `copper_mm` is identical on three. That
@@ -206,7 +251,8 @@ EXPECTED = {
                # 2026-09-03 (#530 auto/fab defaults): 33/345.52/373 -> 39/353.93/256
                # 2026-09-10 (#908 footprint copper): 39/353.93/256 -> 34/344.06/286
                # 2026-09-14 (#958 phase 2): segs 286 -> 254; vias/copper unmoved
-               'quality': {'vias': 34, 'copper_mm': 344.06, 'segments': 254}},
+               # 2026-09-15 (#908 Phase 3 lift): 34/344.06/254 -> 34/336.58/250
+               'quality': {'vias': 34, 'copper_mm': 336.58, 'segments': 250}},
         predictors={
             'crossings': 53, 'hpwl': 253.98092000000003,
             'halo': 127.48707486477095, 'overlap_area': 1.1400451712000104,
@@ -222,7 +268,8 @@ EXPECTED = {
                # 2026-09-03 (auto/fab defaults): 29/341.07/288 -> 32/327.31/282
                # 2026-09-10 (#908 footprint copper): 32/327.31/282 -> 37/363.0/311
                # 2026-09-14 (#958 phase 2): segs 311 -> 292; vias/copper unmoved
-               'quality': {'vias': 37, 'copper_mm': 363.0, 'segments': 292}},
+               # 2026-09-15 (#908 Phase 3 lift): 37/363.0/292 -> 38/361.26/296
+               'quality': {'vias': 38, 'copper_mm': 361.26, 'segments': 296}},
         predictors={
             'crossings': 50, 'hpwl': 252.34828000000005,
             'halo': 130.46454030971682, 'overlap_area': 1.1400451712000104,
@@ -277,7 +324,8 @@ EXPECTED = {
                # 2026-09-03 (auto/fab defaults): 32/347.03/270 -> 31/341.99/263
                # 2026-09-10 (#908 footprint copper): 31/341.99/263 -> 30/350.67/304
                # 2026-09-14 (#958 phase 2): segs 304 -> 269; vias/copper unmoved
-               'quality': {'vias': 30, 'copper_mm': 350.67, 'segments': 269}},
+               # 2026-09-15 (#908 Phase 3 lift): 30/350.67/269 -> 35/362.75/282
+               'quality': {'vias': 35, 'copper_mm': 362.75, 'segments': 282}},
         predictors={
             'crossings': 23, 'hpwl': 260.0687799999999,
             'halo': 101.01900525631262, 'overlap_area': 1.0,
