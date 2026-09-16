@@ -3812,13 +3812,6 @@ def prune_grazing_segments(results, pcb_data: PCBData, scope_net_ids=None,
 # _SMOOTH_DEGENERATE_LEG mm is neither emitted nor counted.
 _SMOOTH_TIE_TOL = 1e-9
 _SMOOTH_DEGENERATE_LEG = 1e-5
-#: How much room a pad that still needs an ESCAPE must keep. Mirrors the
-#: `max_search_radius` net_rescue gives `tap_pad_with_escalation` for the #666
-#: bare-ball dogbone: that is how far out the escape may put its via, so it is
-#: the distance within which copper competes with the escape. A via-width
-#: keep-out is NOT enough -- measured on ft2232h_jtag the winning escape via
-#: sits 1.21mm from its pad.
-_SMOOTH_ESCAPE_ROOM_MM = 1.5
 
 
 def _octolinear_bends(A, B):
@@ -4235,62 +4228,6 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
             return all(min(x - min_x, max_x - x, y - min_y, max_y - y) >= required
                        for x, y in ((x1, y1), (x2, y2)))
         return True
-
-    # PADS THAT STILL NEED AN ESCAPE, computed ONCE. A pad with no same-net
-    # copper attached will be handed to the #666 bare-ball dogbone if its net
-    # ends up short, and that escape needs somewhere to put a via. Same
-    # "is anything of mine near this pad" test net_rescue uses, so the two
-    # agree about which pads are waiting.
-    #
-    # Built from a net-keyed endpoint index rather than a scan per pad: one
-    # pass over the copper, then a few compares per pad. Typically a handful of
-    # pads survive, which is what keeps the guard below off the hot path.
-    _ep_by_net = defaultdict(list)
-    for _s in pcb_data.segments:
-        _ep_by_net[_s.net_id].append((_s.start_x, _s.start_y))
-        _ep_by_net[_s.net_id].append((_s.end_x, _s.end_y))
-    for _v in pcb_data.vias:
-        _ep_by_net[_v.net_id].append((_v.x, _v.y))
-    _escape_pads = []
-    for _fp in pcb_data.footprints.values():
-        for _pd in _fp.pads:
-            if (_pd.drill or 0) > 0 or not _pd.net_id:
-                continue          # a barrel already reaches every layer
-            _r = max(_pd.size_x, _pd.size_y) / 2.0 + 0.35
-            _px, _py = _pd.global_x, _pd.global_y
-            if any(abs(ex - _px) < _r and abs(ey - _py) < _r
-                   for ex, ey in _ep_by_net.get(_pd.net_id, ())):
-                continue          # already has copper -- it has its escape
-            _escape_pads.append((_px, _py))
-
-    # Sorted by x so a query touches only the pads in its own band. Without it
-    # the guard is O(waiting pads) per candidate on the smoother's inner loop --
-    # 104 of them on ottercast_audio, which is not a cost this pass should carry
-    # for a tie-break.
-    _escape_pads.sort()
-    _escape_xs = [px for px, _py in _escape_pads]
-
-    def _escape_room_lost(old_pts, new_pts):
-        """Does the new polyline crowd a waiting pad the old one did not?"""
-        import bisect
-        xs = [q[0] for q in new_pts]
-        ys = [q[1] for q in new_pts]
-        lo = bisect.bisect_left(_escape_xs, min(xs) - _SMOOTH_ESCAPE_ROOM_MM)
-        hi = bisect.bisect_right(_escape_xs, max(xs) + _SMOOTH_ESCAPE_ROOM_MM)
-        y0, y1 = min(ys) - _SMOOTH_ESCAPE_ROOM_MM, max(ys) + _SMOOTH_ESCAPE_ROOM_MM
-        for k in range(lo, hi):
-            px, py = _escape_pads[k]
-            if not (y0 <= py <= y1):
-                continue
-            new_d = min(_pt_seg_dist(px, py, a[0], a[1], b[0], b[1])
-                        for a, b in zip(new_pts, new_pts[1:]))
-            if new_d >= _SMOOTH_ESCAPE_ROOM_MM:
-                continue
-            old_d = min(_pt_seg_dist(px, py, a[0], a[1], b[0], b[1])
-                        for a, b in zip(old_pts, old_pts[1:]))
-            if new_d < old_d - _SMOOTH_TIE_TOL:
-                return True
-        return False
 
     # Foreign-net POURS are deliberately NOT consulted (same convention as
     # routing itself, which is pour-blind): a shortcut inside a foreign pour
@@ -4733,68 +4670,17 @@ def smooth_octolinear_chains(results, pcb_data: PCBData, scope_net_ids=None,
                                         lengths = [math.hypot(b[0] - a[0], b[1] - a[1])
                                                    for a, b in zip(pts, pts[1:])]
                                         new_len = sum(lengths)
-                                        _is_tie = (allow_tie
-                                                   and abs(new_len - sub_len) <= _SMOOTH_TIE_TOL
-                                                   and sum(d > _SMOOTH_DEGENERATE_LEG
-                                                           for d in lengths) < j - i)
-                                        if new_len > sub_len - min_gain and not _is_tie:
+                                        if new_len > sub_len - min_gain and not (
+                                                allow_tie
+                                                and abs(new_len - sub_len) <= _SMOOTH_TIE_TOL
+                                                and sum(d > _SMOOTH_DEGENERATE_LEG
+                                                        for d in lengths) < j - i):
                                             continue
-                                        if not all(clears_m(pts[q][0], pts[q][1],
-                                                            pts[q + 1][0], pts[q + 1][1])
-                                                   for q in range(len(pts) - 1)):
-                                            continue
-                                        # An EQUAL-LENGTH collapse must not
-                                        # crowd a pad that is still waiting for
-                                        # an escape (#958 + this).
-                                        #
-                                        # Straightening does not add copper --
-                                        # it MOVES it. A staircase hugs its own
-                                        # corner; the diagonal replacing it cuts
-                                        # across, sweeping through the space the
-                                        # steps left open. If a pad with no
-                                        # copper of its own is sitting in that
-                                        # space, the copper has just taken the
-                                        # room its escape via needs -- and BOTH
-                                        # variants are DRC-legal, so clears()
-                                        # cannot choose between them.
-                                        #
-                                        # Measured on ft2232h_jtag, +1V8 under
-                                        # U4's 0.5mm-pitch BGA, 3.8728mm either
-                                        # way:
-                                        #   3 legs, run at y=102.900
-                                        #   2 legs, run at y=102.600
-                                        # /OSCI's bare ball U4.2 sits at
-                                        # (127.75,101.33): the run moves from
-                                        # 1.57mm to 1.27mm of it, inside the
-                                        # 1.5mm the #666 dogbone searches for a
-                                        # via site. The dogbone then failed, the
-                                        # rescue failed, and /OSCI shipped in two
-                                        # pieces.
-                                        #
-                                        # This is checked AFTER clears_m (both
-                                        # reject, so the order cannot change
-                                        # which spans collapse, but clears_m is
-                                        # memoised and warm from phase 1) and
-                                        # only for TIES, so it sees a small
-                                        # fraction of candidates.
-                                        #
-                                        # A pad-CLEARANCE test was tried first
-                                        # and does NOT catch this: the copper
-                                        # moves into the channel between balls,
-                                        # no closer to any pad's keep-out, so
-                                        # the collapse was accepted and the net
-                                        # still lost. What matters is the room
-                                        # left for the pads that have no copper
-                                        # yet, not clearance to the pads that do.
-                                        #
-                                        # Strictly-shorter collapses are
-                                        # untouched -- those pay real length for
-                                        # the space, the trade #536 always made.
-                                        if _is_tie and _escape_pads and \
-                                                _escape_room_lost(poly[i:j + 1], pts):
-                                            continue
-                                        found = (j, pts)
-                                        break
+                                        if all(clears_m(pts[q][0], pts[q][1],
+                                                        pts[q + 1][0], pts[q + 1][1])
+                                               for q in range(len(pts) - 1)):
+                                            found = (j, pts)
+                                            break
                                     if found:
                                         break
                                 if found:
