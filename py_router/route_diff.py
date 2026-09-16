@@ -119,8 +119,13 @@ from grid_router import GridObstacleMap, GridRouter
 _NO_PAIRS_MATCHED = False
 
 
-def protection_candidates(routed_results, pcb_data):
+def protection_candidates(routed_results, pcb_data, pairs=None):
     """{net name -> 'diff-pair'} for every pair member this run really routed.
+
+    `pairs` is the run's [(name, DiffPair)] list. With it, protection is decided
+    PER PAIR: both members must be admitted AND both must end CONNECTED. Without
+    it the decision stays per-net (the pre-#521-pair-check behaviour, kept so a
+    caller that has no pair list -- and #906's own gate -- is unchanged).
 
     #521 protects coupled-pair copper because a later chain step cannot
     reproduce it -- P/N geometry, gap, polarity. #906 is which results count.
@@ -157,15 +162,51 @@ def protection_candidates(routed_results, pcb_data):
     candidates and smoothing collapsed 16 spans / 10 nets including the pair.
     After a hand `persist_protected_nets` call: 14 spans / 8 nets, pair intact.
     """
-    out = {}
-    for _nid, _res in (routed_results or {}).items():
+    def _admitted(_nid):
+        _res = (routed_results or {}).get(_nid)
         if not _res or _res.get('failed') or _res.get('selfgraze'):
-            continue
-        if not (_res.get('is_diff_pair') or _res.get('hybrid_escape')):
-            continue
+            return False
+        return bool(_res.get('is_diff_pair') or _res.get('hybrid_escape'))
+
+    def _name(_nid):
         _net = (pcb_data.nets or {}).get(_nid)
-        if _net and _net.name:
-            out[_net.name] = 'diff-pair'
+        return _net.name if _net and _net.name else None
+
+    if pairs is None:
+        out = {}
+        for _nid in (routed_results or {}):
+            if _admitted(_nid) and _name(_nid):
+                out[_name(_nid)] = 'diff-pair'
+        return out
+
+    # PER PAIR, and both members must have LANDED. Protection is for copper a
+    # later step cannot reproduce -- a coupled P/N geometry. Half a pair is not
+    # that: if one member failed or ended disconnected, the survivor's copper is
+    # ordinary single-ended routing the next step can redo, and freezing it only
+    # takes a rip candidate away from whatever still has to get through. This
+    # function used to decide per NET off each member's own result dict, so a
+    # survivor was protected on its own; the docstring above asserts the hybrid
+    # is "admitted only when both members connect terminal to terminal", but
+    # that is a property of the CONSTRUCTOR and was never checked here, and the
+    # `is_diff_pair` path never looked at the partner at all. A pair reported
+    # 'coupled' whose MEMBER AUDIT then finds disconnected pads (ecp5_mini's
+    # /PA26, /PH15) is exactly the shape that slipped through.
+    #
+    # `_member_connected` is the same predicate the post-route cleanup scope
+    # below already uses to decide a pair's copper is safe to sweep, so the two
+    # agree about what "this pair landed" means.
+    from diff_pair_custody import _member_connected
+    out = {}
+    for _pn, _pair in pairs:
+        p_id, n_id = _pair.p_net_id, _pair.n_net_id
+        if not (_admitted(p_id) and _admitted(n_id)):
+            continue
+        if not (_member_connected(pcb_data, p_id)
+                and _member_connected(pcb_data, n_id)):
+            continue
+        for _nid in (p_id, n_id):
+            if _name(_nid):
+                out[_name(_nid)] = 'diff-pair'
     return out
 
 
@@ -1439,7 +1480,8 @@ def batch_route_diff_pairs(input_file: str, output_file: str, net_names: List[st
     # AI-plan executor inherit the noting; the writeback next to the DRC-floor
     # persistence records it in the sibling .kicad_pro.
     from protected_nets import note_protection_candidates
-    _prot = protection_candidates(routed_results, pcb_data)
+    _prot = protection_candidates(routed_results, pcb_data,
+                                  pairs=diff_pair_ids_to_route)
     if _prot:
         note_protection_candidates(_prot)
 
