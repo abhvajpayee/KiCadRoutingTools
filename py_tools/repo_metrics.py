@@ -49,8 +49,16 @@ import urllib.request
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(ROOT, 'metrics', 'data')
-SITE = os.path.join(ROOT, 'docs', 'site')
+#: The snapshot ARCHIVE. Overridable (--data-dir / KRT_METRICS_DATA) because it
+#: does not live in this checkout in CI: the traffic API is a rolling 14-day
+#: window GitHub never backfills, so the snapshots must accumulate somewhere
+#: durable -- but that somewhere does not have to be `main`. The workflow
+#: checks out the orphan `metrics-data` branch and points this at it, so the
+#: daily bookkeeping commit lands there and main stays free of it.
+DATA = os.environ.get('KRT_METRICS_DATA') or os.path.join(ROOT, 'metrics', 'data')
+#: The rendered site. Regenerated every run and uploaded straight to Pages, so
+#: it is gitignored and never committed.
+SITE = os.environ.get('KRT_METRICS_SITE') or os.path.join(ROOT, 'docs', 'site')
 
 #: The prebuilt router binaries `build_router.py` fetches, by platform label.
 PLATFORMS = (
@@ -987,13 +995,32 @@ by a GitHub Actions workflow.</div>
 
 def main():
     ap = argparse.ArgumentParser(
-        description='Snapshot GitHub reach data into metrics/data and render '
-                    'docs/metrics/index.html.')
+        description='Snapshot GitHub reach data into the archive (default '
+                    'metrics/data) and render the site into docs/site.')
     ap.add_argument('--repo', default='', help='owner/name (default: git remote)')
     ap.add_argument('--token', default='', help='API token (default: env/gh CLI)')
     ap.add_argument('--only', default='collect,render',
                     help='collect,render (default: both)')
+    ap.add_argument('--data-dir', default='',
+                    help='snapshot archive directory (default: metrics/data, '
+                         'or $KRT_METRICS_DATA). CI points this at a checkout '
+                         'of the orphan metrics-data branch.')
+    ap.add_argument('--site-dir', default='',
+                    help='rendered site directory (default: docs/site, or '
+                         '$KRT_METRICS_SITE)')
     args = ap.parse_args()
+
+    # Module-level so every collect/render helper sees the override without
+    # threading a path through all of them; the archive test already rebinds
+    # these two the same way.
+    global DATA, SITE
+    if args.data_dir:
+        DATA = os.path.abspath(args.data_dir)
+    if args.site_dir:
+        SITE = os.path.abspath(args.site_dir)
+    os.makedirs(DATA, exist_ok=True)
+    print(f'archive: {DATA}')
+    print(f'site:    {SITE}')
 
     slug = _repo_slug(args.repo)
     stages = [s.strip() for s in args.only.split(',') if s.strip()]
